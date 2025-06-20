@@ -7,7 +7,7 @@ const {
 } = require('../services/youtubeService');
 
 // Kanal listesi güncelle
-router.get('/update-channel-list', async (req, res) => {
+router.get('/load-channel-list', async (req, res) => {
   try {
     const country = (req.query.country || 'TR').toUpperCase();
     const result = await updateChannelList(country);

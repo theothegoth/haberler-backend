@@ -4,8 +4,7 @@ const axios = require('axios');
 
 const searchTerms = [
   'haber', 'gündem', 'siyaset', 'ekonomi', 'dış politika',
-  'son dakika', 'yorum', 'analiz', 'açıklama', 'gazeteci',
-  'canlı yayın'
+  'son dakika', 'gazeteci'
 ];
 
 function getChannelsFilePath(countryCode) {

@@ -1,10 +1,8 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
-const cron = require('node-cron');
-
 const youtubeRoutes = require('./routes/youtubeRoutes');
-const { updateChannelList } = require('./services/youtubeService');
+const cron = require('node-cron');
 
 const app = express();
 const port = process.env.PORT || 5000;
@@ -14,10 +12,14 @@ app.use(express.json());
 
 app.use('/api/youtube', youtubeRoutes);
 
-// Cron job: Her gece yarısı saat 00:00'da kanal listesini güncelle
-cron.schedule('0 0 * * *', () => {
-  console.log('Gece yarısı: Kanal listesi güncelleniyor...');
-  updateChannelList();
+// Cron job: 15 dakikada bir video cache güncelle
+cron.schedule('*/15 * * * *', async () => {
+  try {
+    await youtubeRoutes.updateVideoCache('TR');
+    console.log('✅ Otomatik video cache güncellendi.');
+  } catch (error) {
+    console.error('❌ Otomatik video cache güncellenirken hata:', error.message);
+  }
 });
 
 app.listen(port, () => {

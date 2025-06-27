@@ -195,8 +195,147 @@ async function getVideosFromCache(req, res) {
   res.json(videos);
 }
 
+async function addChannelFromInput(input, countryCode = 'TR') {
+  const apiKey = process.env.YOUTUBE_API_KEY;
+  const channels = await loadChannelList(countryCode);
+
+  let channelId = null;
+
+  // 1. Eğer input doğrudan @handle ise (@OnlarTV)
+  if (input.startsWith('@')) {
+    const handle = input;
+
+    const res = await axios.get('https://youtube.googleapis.com/youtube/v3/search', {
+      params: {
+        part: 'snippet',
+        q: handle,
+        type: 'channel',
+        maxResults: 1,
+        regionCode: countryCode,
+        key: apiKey
+      }
+    });
+
+    if (!res.data.items || res.data.items.length === 0) {
+      throw new Error('Handle ile kanal bulunamadı.');
+    }
+
+    channelId = res.data.items[0].snippet.channelId;
+
+  // 2. Eğer input https://www.youtube.com/@OnlarTV gibi bir handle URL'siyse
+  } else if (input.includes('youtube.com/@')) {
+    const match = input.match(/youtube\.com\/@([\w\-]+)/);
+    if (!match) throw new Error('URL’den handle alınamadı.');
+    const handle = '@' + match[1];
+
+    const res = await axios.get('https://youtube.googleapis.com/youtube/v3/search', {
+      params: {
+        part: 'snippet',
+        q: handle,
+        type: 'channel',
+        maxResults: 1,
+        regionCode: countryCode,
+        key: apiKey
+      }
+    });
+
+    if (!res.data.items || res.data.items.length === 0) {
+      throw new Error('Handle ile kanal bulunamadı.');
+    }
+
+    channelId = res.data.items[0].snippet.channelId;
+
+  // 3. Eğer input https://www.youtube.com/channel/CHANNEL_ID şeklindeyse
+  } else if (input.includes('youtube.com/channel/')) {
+    const match = input.match(/channel\/([a-zA-Z0-9_-]+)/);
+    if (match) {
+      channelId = match[1];
+    } else {
+      throw new Error('URL’den kanal ID alınamadı.');
+    }
+
+  // 4. Doğrudan kanal ID verilmiş olabilir
+  } else {
+    channelId = input;
+  }
+
+  if (!channelId) {
+    throw new Error('channelId alınamadı.');
+  }
+
+  // 5. Kanal zaten kayıtlı mı?
+  if (channels.some(c => c.channelId === channelId)) {
+    return { message: 'Bu kanal zaten listede.' };
+  }
+
+  // 6. Kanal bilgilerini al
+  const channelRes = await axios.get('https://youtube.googleapis.com/youtube/v3/channels', {
+    params: {
+      part: 'snippet',
+      id: channelId,
+      key: apiKey
+    }
+  });
+
+  if (!channelRes.data.items || channelRes.data.items.length === 0) {
+    throw new Error('Kanal bilgisi alınamadı.');
+  }
+
+  const channelTitle = channelRes.data.items[0].snippet.title;
+  channels.push({ channelId, channelTitle });
+
+  await saveChannelList(channels, countryCode);
+
+  // Kanalın en son videosunu çek
+  const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+  const videoRes = await axios.get('https://youtube.googleapis.com/youtube/v3/search', {
+    params: {
+      part: 'snippet',
+      channelId,
+      type: 'video',
+      order: 'date',
+      publishedAfter: yesterday,
+      maxResults: 1,
+      key: apiKey
+    }
+  });
+
+  let videosCache = await loadVideosCache(countryCode);
+
+  if (videoRes.data.items && videoRes.data.items.length > 0) {
+    const video = videoRes.data.items[0];
+    const videoId = video.id.videoId;
+
+    // Like sayısı ekle
+    const statsRes = await axios.get('https://youtube.googleapis.com/youtube/v3/videos', {
+      params: {
+        part: 'statistics',
+        id: videoId,
+        key: apiKey
+      }
+    });
+
+    const likeCount = parseInt(statsRes.data.items?.[0]?.statistics?.likeCount) || 0;
+
+    videosCache.push({
+      videoId,
+      channelTitle,
+      title: video.snippet.title,
+      thumbnail: video.snippet.thumbnails.medium.url,
+      publishedAt: video.snippet.publishedAt,
+      likeCount
+    });
+
+    await saveVideosCache(videosCache, countryCode);
+  }
+
+  return { message: `✅ Kanal ve son videosu başarıyla eklendi: ${channelTitle}` };
+}
+
+
 module.exports = {
   updateChannelList,
   updateVideoCache,
+  addChannelFromInput,
   getVideosFromCache
 };

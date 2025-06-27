@@ -14,7 +14,7 @@ app.use(express.json());
 app.use('/api/youtube', youtubeRoutes);
 
 // Cron job: 15 dakikada bir video cache güncelle
-cron.schedule('* * * * *', async () => {
+cron.schedule('*/15 * * * *', async () => {
   try {
     await updateVideoCache('TR'); // <-- Doğrudan servis fonksiyonu çağrılıyor
     console.log('✅ Otomatik video cache güncellendi.');

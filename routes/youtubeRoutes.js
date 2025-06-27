@@ -3,7 +3,8 @@ const router = express.Router();
 const {
   updateChannelList,
   updateVideoCache,
-  getVideosFromCache
+  getVideosFromCache,
+  addChannelFromInput
 } = require('../services/youtubeService');
 
 // Kanal listesi güncelle
@@ -31,4 +32,27 @@ router.get('/update-video-cache', async (req, res) => {
 // Cache'den videoları getir
 router.get('/videos-from-cache', getVideosFromCache);
 
+// Kanal ekleme (handle, ID veya URL ile)
+router.post('/add-channel', async (req, res) => {
+  try {
+    const { input, country } = req.body;
+    const result = await addChannelFromInput(input, country || 'TR');
+    res.json(result);
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+router.post('/add-channel', async (req, res) => {
+  try {
+    const { input } = req.body;
+    if (!input) {
+      return res.status(400).json({ error: 'input (kanal ID veya handle) gereklidir.' });
+    }
+    const result = await addChannelFromInput(input, 'TR');
+    res.json(result);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
 module.exports = router;

@@ -4,40 +4,40 @@
     "channelTitle": "Haber Global"
   },
   {
-    "channelId": "UCKQhfw-lzz0uKnE1fY1PsAA",
-    "channelTitle": "A Haber"
+    "channelId": "UC3ELm5o92cfi-h43u4Nse7w",
+    "channelTitle": "Haber Lütfen"
   },
   {
-    "channelId": "UC7DDcxd92wR0LzlMKIcHDAA",
-    "channelTitle": "Show Ana Haber"
+    "channelId": "UCKQhfw-lzz0uKnE1fY1PsAA",
+    "channelTitle": "A Haber"
   },
   {
     "channelId": "UCdggatDzQjGWnqY1WvqgtXA",
     "channelTitle": "atv Haber"
   },
   {
-    "channelId": "UCbq0bGdShXK5dMzEDU7nThA",
-    "channelTitle": "NOW Haber"
-  },
-  {
-    "channelId": "UCzgrZ-CndOoylh2_e72nSBQ",
-    "channelTitle": "TGRT Haber TV"
-  },
-  {
-    "channelId": "UC3ELm5o92cfi-h43u4Nse7w",
-    "channelTitle": "Haber Lütfen"
-  },
-  {
     "channelId": "UCqAr0vySgxC9E4-3wtLhrvQ",
     "channelTitle": "Haber"
   },
   {
-    "channelId": "UCBgTP2LOFVPmq15W-RH-WXA",
-    "channelTitle": "TRT Haber"
+    "channelId": "UC7DDcxd92wR0LzlMKIcHDAA",
+    "channelTitle": "Show Ana Haber"
   },
   {
-    "channelId": "UCXe11k8W2MD5ySxhoUXQvgg",
-    "channelTitle": "Beyaz Haber"
+    "channelId": "UCbq0bGdShXK5dMzEDU7nThA",
+    "channelTitle": "NOW Haber"
+  },
+  {
+    "channelId": "UC6P3JpJRw5ryN_PqD1iC8yA",
+    "channelTitle": "Kanal 7 Haber"
+  },
+  {
+    "channelId": "UCxdpqtb0HIOdH7RGyfgmJbA",
+    "channelTitle": "Demirören Haber Ajansı"
+  },
+  {
+    "channelId": "UCzgrZ-CndOoylh2_e72nSBQ",
+    "channelTitle": "TGRT Haber TV"
   },
   {
     "channelId": "UCXTuTRn0L4c0pxPAcaL1Pfw",
@@ -52,6 +52,14 @@
     "channelTitle": "Gündem Tarih"
   },
   {
+    "channelId": "UCKt9sS4ETbEV_ppqk9i3-yA",
+    "channelTitle": "Salçalı Gündem"
+  },
+  {
+    "channelId": "UCGSRF3AbpF06kFs4vb8jdbA",
+    "channelTitle": "Gündem TV"
+  },
+  {
     "channelId": "UC0i6aCUEhrkCAUFjCYBDKxQ",
     "channelTitle": "Stratejik Gündem"
   },
@@ -60,24 +68,16 @@
     "channelTitle": "Öteki Gündem"
   },
   {
-    "channelId": "UCGSRF3AbpF06kFs4vb8jdbA",
-    "channelTitle": "Gündem TV"
-  },
-  {
-    "channelId": "UCKt9sS4ETbEV_ppqk9i3-yA",
-    "channelTitle": "Salçalı Gündem"
+    "channelId": "UCGfgRdSFciYf1_UzqiuMB6A",
+    "channelTitle": "KRİTİK GÜNDEM TAYFUN TEMEL"
   },
   {
     "channelId": "UC8QqSMvV6Ao7hYcDJXjjiWA",
     "channelTitle": "Bodrum Gündem"
   },
   {
-    "channelId": "UCVLFmOrq9UyJbAUANPKJzIA",
-    "channelTitle": "Gündem Beşiktaş"
-  },
-  {
-    "channelId": "UCwzK1Z9iEn1ezM4aCWxwAvA",
-    "channelTitle": "Haber Ve Gündem"
+    "channelId": "UCWtL6x65pG3vrNkX1Ffc68Q",
+    "channelTitle": "Antalya Gündem"
   },
   {
     "channelId": "UC1g1ESEey4GOjlu4XI3Oc_g",
@@ -92,16 +92,20 @@
     "channelTitle": "Siyaset TV"
   },
   {
+    "channelId": "UCFBAhjP0e9IUqEez2jjITUQ",
+    "channelTitle": "Sadece Siyaset"
+  },
+  {
+    "channelId": "UCyUN2U9MHWA7h7IQL1zzZ_w",
+    "channelTitle": "Asya ile Siyaset"
+  },
+  {
     "channelId": "UC33BDR3mgv8UxSnWgGqCrig",
     "channelTitle": "Merkez Siyaset TV"
   },
   {
     "channelId": "UCv_Own8C6vExp8i2zvoBHLA",
     "channelTitle": "Osmanli Siyaset"
-  },
-  {
-    "channelId": "UCFBAhjP0e9IUqEez2jjITUQ",
-    "channelTitle": "Sadece Siyaset"
   },
   {
     "channelId": "UCsLY1janJMUd89GHVvfknzg",
@@ -116,10 +120,6 @@
     "channelTitle": "Din, Tarih ve Siyaset"
   },
   {
-    "channelId": "UCfOmqERyQ3fUJhkpma44wbA",
-    "channelTitle": "Siyaset Türkiye"
-  },
-  {
     "channelId": "UCgKdEcj85RUNUEmpwsXBVog",
     "channelTitle": "Nasıl Bir Ekonomi TV"
   },
@@ -132,16 +132,16 @@
     "channelTitle": "Ekonomi Ekranı"
   },
   {
-    "channelId": "UCuksVQXbGUkeufAlLOzkBvA",
-    "channelTitle": "33 Dakikada Ekonomi"
+    "channelId": "UCRJWzR-_xFESIuN4o8thc6w",
+    "channelTitle": "Ekonomi Okulum"
   },
   {
     "channelId": "UCMzqy74hO6HL72B8833hIAA",
     "channelTitle": "KARA-Ekonomi"
   },
   {
-    "channelId": "UCRJWzR-_xFESIuN4o8thc6w",
-    "channelTitle": "Ekonomi Okulum"
+    "channelId": "UCuksVQXbGUkeufAlLOzkBvA",
+    "channelTitle": "33 Dakikada Ekonomi"
   },
   {
     "channelId": "UCGTYodwQoEib0hhHzRMDU7w",
@@ -160,12 +160,12 @@
     "channelTitle": "Ekonomi & Politik"
   },
   {
-    "channelId": "UCLHOLWylT5mgrGM3ZMzD8FA",
-    "channelTitle": "Dış Politika Enstitüsü"
-  },
-  {
     "channelId": "UCa5_4EgCq8V-VDeCGS7rs4w",
     "channelTitle": "Dış Politika"
+  },
+  {
+    "channelId": "UCLHOLWylT5mgrGM3ZMzD8FA",
+    "channelTitle": "Dış Politika Enstitüsü"
   },
   {
     "channelId": "UCXhxi4Nb_ICh13HQXGHVeig",
@@ -184,24 +184,20 @@
     "channelTitle": "Ekonomi ve Dış Politika"
   },
   {
-    "channelId": "UCtZkkauTu5q_3X8-TJbeaUQ",
-    "channelTitle": "YOBU Uluslararası İlişkiler Topluluğu"
-  },
-  {
     "channelId": "UC2276nd10Ah1-LOX5jWIczg",
     "channelTitle": "Küresel Politika Topluluğu"
   },
   {
-    "channelId": "UCSj5lu4gjlSWvpsuit1cBMA",
-    "channelTitle": "Türk Dış Politikası Araştırma Merkezi - TUDPAM"
+    "channelId": "UCtZkkauTu5q_3X8-TJbeaUQ",
+    "channelTitle": "YOBU Uluslararası İlişkiler Topluluğu"
   },
   {
     "channelId": "UCLB4TDjiRVGmTni4Efj-jIw",
     "channelTitle": "Bilim Medeniyet"
   },
   {
-    "channelId": "UC2IJUoWo6Z0qLO5jqdkverw",
-    "channelTitle": "Son Dakika "
+    "channelId": "UCsCO3V6vl9_yyMNIeKinfwA",
+    "channelTitle": "Polletika"
   },
   {
     "channelId": "UCzIw7Yzpgw37LcoOFKiWkHg",
@@ -224,140 +220,24 @@
     "channelTitle": "Haber Trabzon - Trabzon Son Dakika"
   },
   {
-    "channelId": "UC2w5quOXoVDH_fLZRSeKWXg",
-    "channelTitle": "Samsun Canlı Haber | Samsun Haber ve Son Dakika"
-  },
-  {
     "channelId": "UCQEV5DoDMrNIrTiWVYwuc4A",
     "channelTitle": "İzmir’de Son Dakika"
   },
   {
-    "channelId": "UCVF6WcGzDQ0v34nrzTsea8w",
-    "channelTitle": "son dakika"
+    "channelId": "UC1spq5hhfruyK3wDFAYkp1w",
+    "channelTitle": "SAKARYA SON DAKİKA"
+  },
+  {
+    "channelId": "UC2w5quOXoVDH_fLZRSeKWXg",
+    "channelTitle": "Samsun Canlı Haber | Samsun Haber ve Son Dakika"
+  },
+  {
+    "channelId": "UCmvfmqeIZN_Gi3mb8h5EdIA",
+    "channelTitle": "Son Dakika Haber"
   },
   {
     "channelId": "UCW2DEMnuPw6tspmoyjbsMoA",
     "channelTitle": "Kabataş Son Dakika"
-  },
-  {
-    "channelId": "UCMoPONmAY8RWGRpV0cikFnQ",
-    "channelTitle": "Komik Yorumlar"
-  },
-  {
-    "channelId": "UCF5AOgiMvVFoQa-Cq0B-z4g",
-    "channelTitle": "Borsa Yorum"
-  },
-  {
-    "channelId": "UC-jqykdIPqiu_COwGLebrXA",
-    "channelTitle": "Dümen Yorum"
-  },
-  {
-    "channelId": "UC41NZ2uASYuCh6tVVQzZb8w",
-    "channelTitle": "TR Yorum"
-  },
-  {
-    "channelId": "UCkR0weLiTmMt5XENRFCj6Dg",
-    "channelTitle": "Yorum Okuma"
-  },
-  {
-    "channelId": "UCbO7yvPxMgc4b7YJxvOnkSw",
-    "channelTitle": "Yorum dünyası"
-  },
-  {
-    "channelId": "UCp0p2-0Hc5dnn7yfeQQnpOw",
-    "channelTitle": "Son Yorum"
-  },
-  {
-    "channelId": "UC2MKhta8Ptt6nbTpbygqxdg",
-    "channelTitle": "Akaşa Oku / Yorum"
-  },
-  {
-    "channelId": "UC9XP2yx-oqbkZd_gVlUcYXw",
-    "channelTitle": "Yorum GOL"
-  },
-  {
-    "channelId": "UCIjGKLXSe7cSJ2sep_D5RgA",
-    "channelTitle": "Deep Turkish Web - Yorum Okuma"
-  },
-  {
-    "channelId": "UC5nctZnmGDzpUvH2kWNH_FA",
-    "channelTitle": "AnaliZ"
-  },
-  {
-    "channelId": "UCzLbHT99ZdFDn8mwmBQ4SCw",
-    "channelTitle": "Kripto Analiz"
-  },
-  {
-    "channelId": "UCsaQCBcpZ8ihMJ0KhvKqEaw",
-    "channelTitle": "Oktay Teknik Analiz"
-  },
-  {
-    "channelId": "UCJyQ0ihPLJKry_9_oOLMAWQ",
-    "channelTitle": "Analiz Moto Eksper"
-  },
-  {
-    "channelId": "UCGaBzzBbhCdMM7Ok_B3SkPA",
-    "channelTitle": "Analiz Coin TR"
-  },
-  {
-    "channelId": "UCOX6z5DlE4jhQ3Bf9El6nHQ",
-    "channelTitle": "Şifre Analiz"
-  },
-  {
-    "channelId": "UC9bsK-abVJXOgYx4Jr7RZnA",
-    "channelTitle": "Basit Analiz"
-  },
-  {
-    "channelId": "UCWIq7Nhx_G3jdFvzAYJW9Xg",
-    "channelTitle": "Teknik Analiz Dersleri"
-  },
-  {
-    "channelId": "UCekYuUN1kfynFyjY4ukkzTg",
-    "channelTitle": "Uzman Teknik Analiz"
-  },
-  {
-    "channelId": "UCePT9MD0_RQ-7eaHEYHV9EQ",
-    "channelTitle": "Serbest Piyasa Analiz"
-  },
-  {
-    "channelId": "UCm4a558l_1A80DdHhvwko6g",
-    "channelTitle": "açıklama"
-  },
-  {
-    "channelId": "UCcZLTzRHV5YP99XW8g4JVFA",
-    "channelTitle": "açıklama"
-  },
-  {
-    "channelId": "UCVBgmxNXWvzY21POJA6aakw",
-    "channelTitle": "açıklama"
-  },
-  {
-    "channelId": "UCESxcPgmne_oZfuR0B2vDxQ",
-    "channelTitle": "açıklama..."
-  },
-  {
-    "channelId": "UCAJN1n9QAwHBi_5sHxh4xXQ",
-    "channelTitle": "açıklama"
-  },
-  {
-    "channelId": "UCPpANG0JhIuld8haN0XDhJw",
-    "channelTitle": "açıklama"
-  },
-  {
-    "channelId": "UCrLl1qUPUwaoshpz2dtrHeA",
-    "channelTitle": "Yeni Kanal Açıklama Kısmında"
-  },
-  {
-    "channelId": "UCznAzxUvsBS69ik5OhniQig",
-    "channelTitle": "Açıklama Zamanı"
-  },
-  {
-    "channelId": "UCuEujZA0_MYPdXMwz4bcTdg",
-    "channelTitle": "[Kapattım]-açıklama-"
-  },
-  {
-    "channelId": "UCCu3T3-scPPfpWpSovlPKAQ",
-    "channelTitle": "Yeni Kanal Açıklama Kısmında !"
   },
   {
     "channelId": "UCRoWlz369ya9581nPL0zzJA",
@@ -372,12 +252,12 @@
     "channelTitle": "Gazeteci Çiftçi"
   },
   {
-    "channelId": "UCCi9ZyZfCqCVKieVJptUKlg",
-    "channelTitle": "Levent Gültekin"
-  },
-  {
     "channelId": "UCnTqSB4jmJ_jwPjV76OmfNw",
     "channelTitle": "Canan Kaya"
+  },
+  {
+    "channelId": "UCCi9ZyZfCqCVKieVJptUKlg",
+    "channelTitle": "Levent Gültekin"
   },
   {
     "channelId": "UCd1zyr90qdI6WqGbI40Ef4g",
@@ -392,47 +272,15 @@
     "channelTitle": "gazeteci"
   },
   {
-    "channelId": "UCI3ZE36MYhH7xhudi8dvl4g",
-    "channelTitle": "gezenti gazeteci"
-  },
-  {
     "channelId": "UC7BdGsVW2uqMNGDRUBQJYfw",
     "channelTitle": "GAZETECİ"
   },
   {
-    "channelId": "UC3VxnrA58H4Qkhw4SqTBFYg",
-    "channelTitle": "Stêrk TV Weşana Zindî"
+    "channelId": "UCI3ZE36MYhH7xhudi8dvl4g",
+    "channelTitle": "gezenti gazeteci"
   },
   {
-    "channelId": "UCRaLemo6M0haUrwGWTQoM1A",
-    "channelTitle": "Hasan Yayında"
-  },
-  {
-    "channelId": "UCV6zcRug6Hqp1UX_FdyUeBg",
-    "channelTitle": "CNN TÜRK"
-  },
-  {
-    "channelId": "UCZ-Aiuu18oq9KPmhUs_RN9g",
-    "channelTitle": "Momo Reis Canlı Yayın"
-  },
-  {
-    "channelId": "UCEugdqxOSt1B67dlhsDpPHA",
-    "channelTitle": "Fox Tv Canlı Yayın"
-  },
-  {
-    "channelId": "UCoHnRpOS5rL62jTmSDO5Npw",
-    "channelTitle": "Tele1"
-  },
-  {
-    "channelId": "UCN2nZmzI-XtzxL1ticrslrQ",
-    "channelTitle": "Kanal D Canlı Yayın"
-  },
-  {
-    "channelId": "UC7kkke6ML1PDT_6R5p8diwQ",
-    "channelTitle": "Canlı Yayın"
-  },
-  {
-    "channelId": "UCg3xvLF_AKyeIfMKCd4oSUg",
-    "channelTitle": "Slot Rambo Canlı Yayın"
+    "channelId": "UC8n7mdTh0PsepLg43FgXTyw",
+    "channelTitle": "Onlar"
   }
 ]

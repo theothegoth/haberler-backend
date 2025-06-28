@@ -113,7 +113,6 @@ async function updateVideoCache(countryCode = 'TR') {
   const videosCacheMap = new Map(videosCache.map(v => [v.videoId, v]));
 
   try {
-    // Her kanaldan en son video (maxResults: 1) çek
     for (const channel of channels) {
       const res = await axios.get('https://youtube.googleapis.com/youtube/v3/search', {
         params: {
@@ -138,14 +137,14 @@ async function updateVideoCache(countryCode = 'TR') {
             title: video.snippet.title,
             thumbnail: video.snippet.thumbnails.medium.url,
             publishedAt: video.snippet.publishedAt,
-            likeCount: 0 // Güncellenecek
+            likeCount: 0,
+            category: null
           });
           videosCacheMap.set(videoId, videosCache[videosCache.length - 1]);
         }
       }
     }
 
-    // Cache'deki videoların like sayısını güncelle (50'şer bloklar halinde)
     const videoIds = videosCache.map(v => v.videoId);
     const chunkSize = 50;
 
@@ -154,7 +153,7 @@ async function updateVideoCache(countryCode = 'TR') {
 
       const statsRes = await axios.get('https://youtube.googleapis.com/youtube/v3/videos', {
         params: {
-          part: 'statistics',
+          part: 'statistics,snippet',
           id: chunk,
           key: apiKey
         }
@@ -164,20 +163,18 @@ async function updateVideoCache(countryCode = 'TR') {
         for (const item of statsRes.data.items) {
           const vid = item.id;
           if (videosCacheMap.has(vid)) {
-            videosCacheMap.get(vid).likeCount = parseInt(item.statistics.likeCount) || 0;
+            const video = videosCacheMap.get(vid);
+            video.likeCount = parseInt(item.statistics?.likeCount) || 0;
+            video.category = item.snippet?.categoryId || null;
           }
         }
       }
     }
 
-    // 48 saatten eski videoları temizle
     videosCache = cleanVideosCache(videosCache);
-
-    // Cache'i kaydet
     await saveVideosCache(videosCache, countryCode);
 
     console.log(`${countryCode} video cache başarıyla güncellendi. Toplam video: ${videosCache.length}`);
-
     return { message: `${countryCode} video cache başarıyla güncellendi.` };
   } catch (error) {
     console.error(`${countryCode} video cache güncellenirken hata:`, error.message);
@@ -187,11 +184,14 @@ async function updateVideoCache(countryCode = 'TR') {
 
 async function getVideosFromCache(req, res) {
   const countryCode = (req.query.country || 'TR').toUpperCase();
-  const videos = await loadVideosCache(countryCode);
+  const category = req.query.category;
+  let videos = await loadVideosCache(countryCode);
 
-  // Beğeni sayısına göre azalan sıralama
+  if (category) {
+    videos = videos.filter(video => video.category === category);
+  }
+
   videos.sort((a, b) => (b.likeCount || 0) - (a.likeCount || 0));
-
   res.json(videos);
 }
 
@@ -201,10 +201,8 @@ async function addChannelFromInput(input, countryCode = 'TR') {
 
   let channelId = null;
 
-  // 1. Eğer input doğrudan @handle ise (@OnlarTV)
   if (input.startsWith('@')) {
     const handle = input;
-
     const res = await axios.get('https://youtube.googleapis.com/youtube/v3/search', {
       params: {
         part: 'snippet',
@@ -216,13 +214,11 @@ async function addChannelFromInput(input, countryCode = 'TR') {
       }
     });
 
-    if (!res.data.items || res.data.items.length === 0) {
+    if (!res.data.items?.length) {
       throw new Error('Handle ile kanal bulunamadı.');
     }
 
     channelId = res.data.items[0].snippet.channelId;
-
-  // 2. Eğer input https://www.youtube.com/@OnlarTV gibi bir handle URL'siyse
   } else if (input.includes('youtube.com/@')) {
     const match = input.match(/youtube\.com\/@([\w\-]+)/);
     if (!match) throw new Error('URL’den handle alınamadı.');
@@ -239,13 +235,11 @@ async function addChannelFromInput(input, countryCode = 'TR') {
       }
     });
 
-    if (!res.data.items || res.data.items.length === 0) {
+    if (!res.data.items?.length) {
       throw new Error('Handle ile kanal bulunamadı.');
     }
 
     channelId = res.data.items[0].snippet.channelId;
-
-  // 3. Eğer input https://www.youtube.com/channel/CHANNEL_ID şeklindeyse
   } else if (input.includes('youtube.com/channel/')) {
     const match = input.match(/channel\/([a-zA-Z0-9_-]+)/);
     if (match) {
@@ -253,8 +247,6 @@ async function addChannelFromInput(input, countryCode = 'TR') {
     } else {
       throw new Error('URL’den kanal ID alınamadı.');
     }
-
-  // 4. Doğrudan kanal ID verilmiş olabilir
   } else {
     channelId = input;
   }
@@ -263,12 +255,10 @@ async function addChannelFromInput(input, countryCode = 'TR') {
     throw new Error('channelId alınamadı.');
   }
 
-  // 5. Kanal zaten kayıtlı mı?
   if (channels.some(c => c.channelId === channelId)) {
     return { message: 'Bu kanal zaten listede.' };
   }
 
-  // 6. Kanal bilgilerini al
   const channelRes = await axios.get('https://youtube.googleapis.com/youtube/v3/channels', {
     params: {
       part: 'snippet',
@@ -277,16 +267,14 @@ async function addChannelFromInput(input, countryCode = 'TR') {
     }
   });
 
-  if (!channelRes.data.items || channelRes.data.items.length === 0) {
+  if (!channelRes.data.items?.length) {
     throw new Error('Kanal bilgisi alınamadı.');
   }
 
   const channelTitle = channelRes.data.items[0].snippet.title;
   channels.push({ channelId, channelTitle });
-
   await saveChannelList(channels, countryCode);
 
-  // Kanalın en son videosunu çek
   const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
   const videoRes = await axios.get('https://youtube.googleapis.com/youtube/v3/search', {
     params: {
@@ -302,20 +290,21 @@ async function addChannelFromInput(input, countryCode = 'TR') {
 
   let videosCache = await loadVideosCache(countryCode);
 
-  if (videoRes.data.items && videoRes.data.items.length > 0) {
+  if (videoRes.data.items?.length) {
     const video = videoRes.data.items[0];
     const videoId = video.id.videoId;
 
-    // Like sayısı ekle
     const statsRes = await axios.get('https://youtube.googleapis.com/youtube/v3/videos', {
       params: {
-        part: 'statistics',
+        part: 'statistics,snippet',
         id: videoId,
         key: apiKey
       }
     });
 
-    const likeCount = parseInt(statsRes.data.items?.[0]?.statistics?.likeCount) || 0;
+    const stats = statsRes.data.items?.[0];
+    const likeCount = parseInt(stats?.statistics?.likeCount) || 0;
+    const category = stats?.snippet?.categoryId || null;
 
     videosCache.push({
       videoId,
@@ -323,7 +312,8 @@ async function addChannelFromInput(input, countryCode = 'TR') {
       title: video.snippet.title,
       thumbnail: video.snippet.thumbnails.medium.url,
       publishedAt: video.snippet.publishedAt,
-      likeCount
+      likeCount,
+      category
     });
 
     await saveVideosCache(videosCache, countryCode);
@@ -331,7 +321,6 @@ async function addChannelFromInput(input, countryCode = 'TR') {
 
   return { message: `✅ Kanal ve son videosu başarıyla eklendi: ${channelTitle}` };
 }
-
 
 module.exports = {
   updateChannelList,

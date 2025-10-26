@@ -4,6 +4,10 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "start": "node index.js",
+    "dev": "set NODE_ENV=development&& nodemon index.js",
+    "prod": "set NODE_ENV=production&& node index.js",
+    "init-db": "node config/initDatabase.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
@@ -11,9 +15,18 @@
   "license": "ISC",
   "dependencies": {
     "axios": "^1.10.0",
+    "bcrypt": "^6.0.0",
     "cors": "^2.8.5",
     "dotenv": "^16.5.0",
     "express": "^5.1.0",
-    "node-cron": "^4.1.0"
+    "express-rate-limit": "^8.1.0",
+    "express-validator": "^7.3.0",
+    "jsonwebtoken": "^9.0.2",
+    "node-cron": "^4.1.0",
+    "pg": "^8.16.3",
+    "rss-parser": "^3.13.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.10"
   }
 }

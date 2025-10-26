@@ -1,28 +1,99 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
-const youtubeRoutes = require('./routes/youtubeRoutes');
-const { updateVideoCache } = require('./services/youtubeService'); // <-- Burada ekledik
 const cron = require('node-cron');
+
+const validateEnv = require('./config/validateEnv');
+const corsOptions = require('./config/corsOptions');
+const { requestLogger, Logger } = require('./utils/logger');
+const { errorHandler, notFound } = require('./middleware/errorHandler');
+const { apiLimiter, authLimiter } = require('./middleware/rateLimiter');
+
+const authRoutes = require('./routes/authRoutes');
+const channelRoutes = require('./routes/channelRoutes');
+const videoRoutes = require('./routes/videoRoutes');
+const youtubeRoutes = require('./routes/youtubeRoutes');
+
+const YouTubeService = require('./services/youtubeServiceNew');
+
+const logger = new Logger('SERVER');
+
+validateEnv();
 
 const app = express();
 const port = process.env.PORT || 5000;
 
-app.use(cors());
-app.use(express.json());
+app.use(cors(corsOptions));
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-app.use('/api/youtube', youtubeRoutes);
+app.use(requestLogger);
 
-// Cron job: 15 dakikada bir video cache güncelle
-cron.schedule('*/15 * * * *', async () => {
+app.get('/api/health', (req, res) => {
+  res.json({
+    status: 'OK',
+    message: 'Backend is running',
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime(),
+    environment: process.env.NODE_ENV
+  });
+});
+
+app.use('/api/auth', authLimiter, authRoutes);
+app.use('/api/channels', apiLimiter, channelRoutes);
+app.use('/api/videos', apiLimiter, videoRoutes);
+app.use('/api/youtube', apiLimiter, youtubeRoutes);
+
+app.use(notFound);
+app.use(errorHandler);
+
+cron.schedule('*/30 * * * *', async () => {
   try {
-    await updateVideoCache('TR'); // <-- Doğrudan servis fonksiyonu çağrılıyor
-    console.log('✅ Otomatik video cache güncellendi.');
+    logger.info('Starting scheduled video cleanup...');
+    await YouTubeService.cleanOldVideos();
+    logger.info('Scheduled video cleanup completed');
   } catch (error) {
-    console.error('❌ Otomatik video cache güncellenirken hata:', error.message);
+    logger.error('Scheduled video cleanup failed:', error);
   }
 });
 
-app.listen(port, () => {
-  console.log(`Backend çalışıyor: http://localhost:${port}`);
+const server = app.listen(port, () => {
+  logger.info(`Backend running on http://localhost:${port}`);
+  logger.info(`Health check available at http://localhost:${port}/api/health`);
+  logger.info(`Environment: ${process.env.NODE_ENV}`);
+});
+
+const gracefulShutdown = async (signal) => {
+  logger.info(`${signal} received, shutting down gracefully...`);
+
+  server.close(async () => {
+    logger.info('HTTP server closed');
+
+    try {
+      const pool = require('./config/database');
+      await pool.end();
+      logger.info('Database connections closed');
+    } catch (error) {
+      logger.error('Error closing database connections:', error);
+    }
+
+    process.exit(0);
+  });
+
+  setTimeout(() => {
+    logger.error('Forcefully shutting down after timeout');
+    process.exit(1);
+  }, 10000);
+};
+
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+
+process.on('unhandledRejection', (reason, promise) => {
+  logger.error('Unhandled Rejection at:', { promise, reason });
+});
+
+process.on('uncaughtException', (error) => {
+  logger.error('Uncaught Exception:', error);
+  gracefulShutdown('UNCAUGHT_EXCEPTION');
 });

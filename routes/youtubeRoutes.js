@@ -36,6 +36,11 @@ router.get('/videos-from-cache', getVideosFromCache);
 router.post('/add-channel', async (req, res) => {
   try {
     const { input, country } = req.body;
+
+    if (!input) {
+      return res.status(400).json({ error: 'input (kanal ID veya handle) gereklidir.' });
+    }
+
     const result = await addChannelFromInput(input, country || 'TR');
     res.json(result);
   } catch (error) {
@@ -43,16 +48,4 @@ router.post('/add-channel', async (req, res) => {
   }
 });
 
-router.post('/add-channel', async (req, res) => {
-  try {
-    const { input } = req.body;
-    if (!input) {
-      return res.status(400).json({ error: 'input (kanal ID veya handle) gereklidir.' });
-    }
-    const result = await addChannelFromInput(input, 'TR');
-    res.json(result);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
 module.exports = router;

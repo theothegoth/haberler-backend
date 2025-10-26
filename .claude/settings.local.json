@@ -17,7 +17,9 @@
       "Bash(git add:*)",
       "Bash(git commit -m \"$(cat <<''EOF''\nBackend: Kullanıcı kimlik doğrulama ve kişiselleştirilmiş dashboard sistemi\n\n- JWT tabanlı authentication sistemi eklendi\n- Kullanıcıya özel kanal ve video yönetimi\n- PostgreSQL veritabanı modelleri ve migrations\n- Username benzersizlik kontrolü ve validasyonu\n- Nodemon ile otomatik yenileme desteği\n- Gereksiz dokümantasyon dosyaları temizlendi\n- Kanal ekleme/silme endpoints\n- Video cache yönetimi\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")",
       "Bash(git commit:*)",
-      "Bash(git push)"
+      "Bash(git push)",
+      "Bash(cat:*)",
+      "Bash(timeout:*)"
     ],
     "deny": [],
     "ask": []

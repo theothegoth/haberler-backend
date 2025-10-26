@@ -13,6 +13,8 @@ const authRoutes = require('./routes/authRoutes');
 const channelRoutes = require('./routes/channelRoutes');
 const videoRoutes = require('./routes/videoRoutes');
 const youtubeRoutes = require('./routes/youtubeRoutes');
+const newsRoutes = require('./routes/newsRoutes');
+const followRoutes = require('./routes/followRoutes');
 
 const YouTubeService = require('./services/youtubeServiceNew');
 
@@ -43,6 +45,8 @@ app.use('/api/auth', authLimiter, authRoutes);
 app.use('/api/channels', apiLimiter, channelRoutes);
 app.use('/api/videos', apiLimiter, videoRoutes);
 app.use('/api/youtube', apiLimiter, youtubeRoutes);
+app.use('/api/news', apiLimiter, newsRoutes);
+app.use('/api/follow', apiLimiter, followRoutes);
 
 app.use(notFound);
 app.use(errorHandler);

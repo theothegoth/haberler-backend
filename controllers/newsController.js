@@ -11,7 +11,7 @@ const newsController = {
       }
 
       const { title, content, category, imageUrl, tags } = req.body;
-      const userId = req.user.id;
+      const userId = req.user.userId;
 
       const news = await UserNews.create({
         userId,
@@ -49,7 +49,7 @@ const newsController = {
   // Get user's own news articles
   async getMyNews(req, res) {
     try {
-      const userId = req.user.id;
+      const userId = req.user.userId;
       const { limit = 20, offset = 0 } = req.query;
 
       const news = await UserNews.findByUserId(userId, parseInt(limit), parseInt(offset));
@@ -77,7 +77,7 @@ const newsController = {
   // Get news feed (from followed users)
   async getNewsFeed(req, res) {
     try {
-      const userId = req.user.id;
+      const userId = req.user.userId;
       const { limit = 20, offset = 0 } = req.query;
 
       const news = await UserNews.getNewsFeed(userId, parseInt(limit), parseInt(offset));
@@ -110,7 +110,7 @@ const newsController = {
 
       const { id } = req.params;
       const { title, content, category, imageUrl, tags } = req.body;
-      const userId = req.user.id;
+      const userId = req.user.userId;
 
       const news = await UserNews.update(id, userId, {
         title,
@@ -135,7 +135,7 @@ const newsController = {
   async deleteNews(req, res) {
     try {
       const { id } = req.params;
-      const userId = req.user.id;
+      const userId = req.user.userId;
 
       const news = await UserNews.delete(id, userId);
 
@@ -154,7 +154,7 @@ const newsController = {
   async likeNews(req, res) {
     try {
       const { id } = req.params;
-      const userId = req.user.id;
+      const userId = req.user.userId;
 
       const success = await UserNews.likeNews(id, userId);
 
@@ -173,7 +173,7 @@ const newsController = {
   async unlikeNews(req, res) {
     try {
       const { id } = req.params;
-      const userId = req.user.id;
+      const userId = req.user.userId;
 
       const success = await UserNews.unlikeNews(id, userId);
 

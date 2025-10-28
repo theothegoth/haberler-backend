@@ -15,6 +15,7 @@ const videoRoutes = require('./routes/videoRoutes');
 const youtubeRoutes = require('./routes/youtubeRoutes');
 const newsRoutes = require('./routes/newsRoutes');
 const followRoutes = require('./routes/followRoutes');
+const emailVerificationRoutes = require('./routes/emailVerification');
 
 const YouTubeService = require('./services/youtubeServiceNew');
 
@@ -47,6 +48,7 @@ app.use('/api/videos', apiLimiter, videoRoutes);
 app.use('/api/youtube', apiLimiter, youtubeRoutes);
 app.use('/api/news', apiLimiter, newsRoutes);
 app.use('/api/follow', apiLimiter, followRoutes);
+app.use('/api/email', emailVerificationRoutes);
 
 app.use(notFound);
 app.use(errorHandler);

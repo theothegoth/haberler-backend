@@ -5,7 +5,7 @@ const followController = {
   async followUser(req, res) {
     try {
       const { userId } = req.params;
-      const followerId = req.user.id;
+      const followerId = req.user.userId;
 
       const follow = await UserFollow.follow(followerId, parseInt(userId));
       res.status(201).json({ message: 'Kullanıcı takip edildi', follow });
@@ -25,7 +25,7 @@ const followController = {
   async unfollowUser(req, res) {
     try {
       const { userId } = req.params;
-      const followerId = req.user.id;
+      const followerId = req.user.userId;
 
       const result = await UserFollow.unfollow(followerId, parseInt(userId));
 
@@ -44,7 +44,7 @@ const followController = {
   async checkFollowing(req, res) {
     try {
       const { userId } = req.params;
-      const followerId = req.user.id;
+      const followerId = req.user.userId;
 
       const isFollowing = await UserFollow.isFollowing(followerId, parseInt(userId));
       res.json({ isFollowing });
@@ -81,7 +81,7 @@ const followController = {
   // Get my followers
   async getMyFollowers(req, res) {
     try {
-      const userId = req.user.id;
+      const userId = req.user.userId;
       const followers = await UserFollow.getFollowers(userId);
       res.json(followers);
     } catch (error) {
@@ -93,7 +93,7 @@ const followController = {
   // Get users I'm following
   async getMyFollowing(req, res) {
     try {
-      const userId = req.user.id;
+      const userId = req.user.userId;
       const following = await UserFollow.getFollowing(userId);
       res.json(following);
     } catch (error) {
@@ -117,7 +117,7 @@ const followController = {
   // Get suggested users to follow
   async getSuggestedUsers(req, res) {
     try {
-      const userId = req.user.id;
+      const userId = req.user.userId;
       const { limit = 10 } = req.query;
       const suggestions = await UserFollow.getSuggestedUsers(userId, parseInt(limit));
       res.json(suggestions);

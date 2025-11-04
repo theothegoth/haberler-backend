@@ -2,7 +2,7 @@ const jwt = require('jsonwebtoken');
 const { body, validationResult } = require('express-validator');
 const User = require('../models/User');
 const { JWT_SECRET } = require('../middleware/auth');
-const { generateVerificationToken, sendVerificationEmail } = require('../services/emailService');
+const { generateVerificationToken, sendVerificationEmail, sendPasswordResetEmail } = require('../services/emailService');
 
 const generateToken = (user) => {
   return jwt.sign(
@@ -230,14 +230,123 @@ const changePasswordValidation = [
   body('newPassword').isLength({ min: 6 }).withMessage('Yeni şifre en az 6 karakter olmalıdır.')
 ];
 
+const uploadProfilePicture = async (req, res) => {
+  try {
+    const userId = req.user.userId;
+
+    if (!req.file) {
+      return res.status(400).json({ error: 'Lütfen bir resim dosyası seçin.' });
+    }
+
+    // Build the profile picture URL
+    const profilePictureUrl = `/uploads/profile-pictures/${req.file.filename}`;
+
+    // Update user's profile picture in database
+    const updatedUser = await User.updateProfilePicture(userId, profilePictureUrl);
+
+    res.json({
+      message: 'Profil fotoğrafı başarıyla güncellendi',
+      user: {
+        id: updatedUser.id,
+        email: updatedUser.email,
+        username: updatedUser.username,
+        bio: updatedUser.bio,
+        profilePicture: updatedUser.profile_picture,
+        countryCode: updatedUser.country_code,
+        emailVerified: updatedUser.email_verified || false
+      }
+    });
+  } catch (error) {
+    console.error('Upload profile picture error:', error);
+    res.status(500).json({ error: 'Profil fotoğrafı yüklenirken bir hata oluştu.' });
+  }
+};
+
+const forgotPassword = async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ error: errors.array()[0].msg });
+    }
+
+    const { email } = req.body;
+
+    const user = await User.findByEmail(email);
+    if (!user) {
+      // Don't reveal if email exists or not for security
+      return res.json({
+        message: 'Şifre sıfırlama bağlantısı email adresinize gönderildi.'
+      });
+    }
+
+    // Generate reset token
+    const resetToken = generateVerificationToken();
+    await User.setResetToken(email, resetToken, 1); // 1 hour expiry
+
+    // Send reset email
+    sendPasswordResetEmail(user.email, user.username, resetToken).catch(err => {
+      console.error('[FORGOT_PASSWORD] Failed to send reset email:', err);
+    });
+
+    res.json({
+      message: 'Şifre sıfırlama bağlantısı email adresinize gönderildi.'
+    });
+  } catch (error) {
+    console.error('Forgot password error:', error);
+    res.status(500).json({ error: 'Bir hata oluştu. Lütfen tekrar deneyin.' });
+  }
+};
+
+const resetPassword = async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ error: errors.array()[0].msg });
+    }
+
+    const { token, newPassword } = req.body;
+
+    const user = await User.findByResetToken(token);
+    if (!user) {
+      return res.status(400).json({
+        error: 'Geçersiz veya süresi dolmuş bağlantı. Lütfen yeni bir şifre sıfırlama talebi oluşturun.'
+      });
+    }
+
+    // Reset password
+    await User.resetPassword(user.id, newPassword);
+
+    res.json({
+      message: 'Şifreniz başarıyla değiştirildi. Şimdi giriş yapabilirsiniz.'
+    });
+  } catch (error) {
+    console.error('Reset password error:', error);
+    res.status(500).json({ error: 'Şifre sıfırlama başarısız oldu. Lütfen tekrar deneyin.' });
+  }
+};
+
+const forgotPasswordValidation = [
+  body('email').isEmail().withMessage('Geçerli bir email adresi giriniz.')
+];
+
+const resetPasswordValidation = [
+  body('token').notEmpty().withMessage('Token gereklidir.'),
+  body('newPassword').isLength({ min: 6 }).withMessage('Şifre en az 6 karakter olmalıdır.')
+];
+
 module.exports = {
   register,
   login,
   getProfile,
   updateProfile,
   changePassword,
+  uploadProfilePicture,
+  forgotPassword,
+  resetPassword,
   registerValidation,
   loginValidation,
   updateProfileValidation,
-  changePasswordValidation
+  changePasswordValidation,
+  forgotPasswordValidation,
+  resetPasswordValidation
 };

@@ -1,4 +1,5 @@
 const UserFollow = require('../models/UserFollow');
+const Notification = require('../models/Notification');
 
 const followController = {
   // Follow a user
@@ -8,6 +9,12 @@ const followController = {
       const followerId = req.user.userId;
 
       const follow = await UserFollow.follow(followerId, parseInt(userId));
+
+      // Create notification for the followed user
+      Notification.createFollowNotification(parseInt(userId), followerId).catch(err =>
+        console.error('Error creating follow notification:', err)
+      );
+
       res.status(201).json({ message: 'Kullanıcı takip edildi', follow });
     } catch (error) {
       if (error.message === 'Cannot follow yourself') {

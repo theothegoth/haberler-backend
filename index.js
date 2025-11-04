@@ -2,6 +2,7 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const cron = require('node-cron');
+const path = require('path');
 
 const validateEnv = require('./config/validateEnv');
 const corsOptions = require('./config/corsOptions');
@@ -15,7 +16,10 @@ const videoRoutes = require('./routes/videoRoutes');
 const youtubeRoutes = require('./routes/youtubeRoutes');
 const newsRoutes = require('./routes/newsRoutes');
 const followRoutes = require('./routes/followRoutes');
+const commentRoutes = require('./routes/commentRoutes');
+const draftRoutes = require('./routes/draftRoutes');
 const emailVerificationRoutes = require('./routes/emailVerification');
+const notificationRoutes = require('./routes/notificationRoutes');
 
 const YouTubeService = require('./services/youtubeServiceNew');
 
@@ -29,6 +33,9 @@ const port = process.env.PORT || 5000;
 app.use(cors(corsOptions));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// Serve uploaded files statically
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 app.use(requestLogger);
 
@@ -48,7 +55,10 @@ app.use('/api/videos', apiLimiter, videoRoutes);
 app.use('/api/youtube', apiLimiter, youtubeRoutes);
 app.use('/api/news', apiLimiter, newsRoutes);
 app.use('/api/follow', apiLimiter, followRoutes);
+app.use('/api/comments', apiLimiter, commentRoutes);
+app.use('/api/drafts', apiLimiter, draftRoutes);
 app.use('/api/email', emailVerificationRoutes);
+app.use('/api/notifications', apiLimiter, notificationRoutes);
 
 app.use(notFound);
 app.use(errorHandler);

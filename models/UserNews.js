@@ -11,15 +11,16 @@ class UserNews {
     return result.rows[0];
   }
 
-  static async findById(newsId) {
+  static async findById(newsId, userId = null) {
     const result = await pool.query(
       `SELECT un.*, u.username, u.email,
               (SELECT COUNT(*) FROM news_likes WHERE news_id = un.id) as like_count,
-              (SELECT COUNT(*) FROM news_comments WHERE news_id = un.id) as comment_count
+              (SELECT COUNT(*) FROM news_comments WHERE news_id = un.id) as comment_count,
+              EXISTS(SELECT 1 FROM news_likes WHERE news_id = un.id AND user_id = $2) as user_has_liked
        FROM user_news un
        JOIN users u ON un.user_id = u.id
        WHERE un.id = $1`,
-      [newsId]
+      [newsId, userId]
     );
     return result.rows[0];
   }
@@ -40,7 +41,7 @@ class UserNews {
   }
 
   static async getNewsFeed(userId, limit = 20, offset = 0) {
-    // Get news from users that the current user follows
+    // Get news from users that the current user follows AND the user's own posts
     const result = await pool.query(
       `SELECT un.*, u.username,
               (SELECT COUNT(*) FROM news_likes WHERE news_id = un.id) as like_count,
@@ -48,8 +49,10 @@ class UserNews {
               (SELECT COUNT(*) > 0 FROM news_likes WHERE news_id = un.id AND user_id = $1) as user_has_liked
        FROM user_news un
        JOIN users u ON un.user_id = u.id
-       JOIN user_follows uf ON un.user_id = uf.followed_id
-       WHERE uf.follower_id = $1
+       WHERE un.user_id = $1
+          OR un.user_id IN (
+            SELECT followed_id FROM user_follows WHERE follower_id = $1
+          )
        ORDER BY un.created_at DESC
        LIMIT $2 OFFSET $3`,
       [userId, limit, offset]

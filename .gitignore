@@ -30,4 +30,5 @@ Thumbs.db
 
 # Temporary files
 tmp/
-temp/
+temp/uploads/profile-pictures/*
+!uploads/profile-pictures/.gitkeep

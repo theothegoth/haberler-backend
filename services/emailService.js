@@ -209,8 +209,106 @@ const sendWelcomeEmail = async (email, username) => {
   }
 };
 
+// Send password reset email
+const sendPasswordResetEmail = async (email, username, token) => {
+  const resetUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/reset-password/${token}`;
+
+  const mailOptions = {
+    from: process.env.SMTP_FROM || '"Gaste News" <noreply@gaste.com>',
+    to: email,
+    subject: 'Password Reset Request - Gaste',
+    text: `Hello ${username},\n\nWe received a request to reset your password. Click the link below to reset it:\n${resetUrl}\n\nThis link will expire in 1 hour.\n\nIf you didn't request this, please ignore this email and your password will remain unchanged.`,
+    html: `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <style>
+          body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+          }
+          .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+          }
+          .header {
+            background: linear-gradient(to right, #ef4444, #f59e0b);
+            color: white;
+            padding: 30px;
+            text-align: center;
+            border-radius: 10px 10px 0 0;
+          }
+          .content {
+            background: #f9fafb;
+            padding: 30px;
+            border-radius: 0 0 10px 10px;
+          }
+          .button {
+            display: inline-block;
+            background: linear-gradient(to right, #ef4444, #f59e0b);
+            color: white;
+            padding: 12px 30px;
+            text-decoration: none;
+            border-radius: 5px;
+            margin: 20px 0;
+          }
+          .warning {
+            background: #fef3c7;
+            border-left: 4px solid #f59e0b;
+            padding: 15px;
+            margin: 20px 0;
+          }
+          .footer {
+            text-align: center;
+            color: #6b7280;
+            font-size: 12px;
+            margin-top: 20px;
+          }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <h1>🔒 Password Reset Request</h1>
+          </div>
+          <div class="content">
+            <h2>Hello ${username},</h2>
+            <p>We received a request to reset your password for your Gaste account.</p>
+            <p style="text-align: center;">
+              <a href="${resetUrl}" class="button">Reset Password</a>
+            </p>
+            <p>Or copy and paste this link into your browser:</p>
+            <p style="word-break: break-all; color: #ef4444;">${resetUrl}</p>
+            <div class="warning">
+              <strong>⏰ This link will expire in 1 hour.</strong>
+            </div>
+            <p><strong>If you didn't request this password reset, please ignore this email.</strong> Your password will remain unchanged.</p>
+            <p>For security reasons, never share this link with anyone.</p>
+          </div>
+          <div class="footer">
+            <p>&copy; ${new Date().getFullYear()} Gaste. All rights reserved.</p>
+          </div>
+        </div>
+      </body>
+      </html>
+    `
+  };
+
+  try {
+    const info = await transporter.sendMail(mailOptions);
+    console.log('[EMAIL] Password reset email sent:', info.messageId);
+    return { success: true, messageId: info.messageId };
+  } catch (error) {
+    console.error('[EMAIL] Error sending password reset email:', error);
+    throw error;
+  }
+};
+
 module.exports = {
   generateVerificationToken,
   sendVerificationEmail,
-  sendWelcomeEmail
+  sendWelcomeEmail,
+  sendPasswordResetEmail
 };

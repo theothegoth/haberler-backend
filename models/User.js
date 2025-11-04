@@ -127,6 +127,42 @@ class User {
     );
     return result.rows[0];
   }
+
+  static async updateProfilePicture(userId, profilePictureUrl) {
+    const result = await pool.query(
+      'UPDATE users SET profile_picture = $1 WHERE id = $2 RETURNING id, email, username, bio, profile_picture, country_code, email_verified, created_at',
+      [profilePictureUrl, userId]
+    );
+    return result.rows[0];
+  }
+
+  static async setResetToken(email, token, expiresIn = 1) {
+    const expiryDate = new Date();
+    expiryDate.setHours(expiryDate.getHours() + expiresIn);
+
+    const result = await pool.query(
+      'UPDATE users SET reset_token = $1, reset_token_expires = $2 WHERE email = $3 RETURNING id, email, username',
+      [token, expiryDate, email]
+    );
+    return result.rows[0];
+  }
+
+  static async findByResetToken(token) {
+    const result = await pool.query(
+      'SELECT * FROM users WHERE reset_token = $1 AND reset_token_expires > NOW()',
+      [token]
+    );
+    return result.rows[0];
+  }
+
+  static async resetPassword(userId, newPassword) {
+    const passwordHash = await bcrypt.hash(newPassword, 10);
+    const result = await pool.query(
+      'UPDATE users SET password_hash = $1, reset_token = NULL, reset_token_expires = NULL WHERE id = $2 RETURNING id, email, username',
+      [passwordHash, userId]
+    );
+    return result.rows[0];
+  }
 }
 
 module.exports = User;

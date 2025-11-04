@@ -1,4 +1,6 @@
 const UserNews = require('../models/UserNews');
+const Notification = require('../models/Notification');
+const pool = require('../config/database');
 const { validationResult } = require('express-validator');
 
 const newsController = {
@@ -22,6 +24,20 @@ const newsController = {
         tags: tags || []
       });
 
+      // Get follower IDs to notify them
+      const followersResult = await pool.query(
+        'SELECT follower_id FROM user_follows WHERE followed_id = $1',
+        [userId]
+      );
+      const followerIds = followersResult.rows.map(row => row.follower_id);
+
+      // Create notifications for all followers (don't await, let it run in background)
+      if (followerIds.length > 0) {
+        Notification.createNewArticleNotification(news.id, userId, followerIds).catch(err =>
+          console.error('Error creating new article notifications:', err)
+        );
+      }
+
       res.status(201).json(news);
     } catch (error) {
       console.error('Error creating news:', error);
@@ -32,13 +48,15 @@ const newsController = {
   // Get a single news article
   async getNews(req, res) {
     try {
+      const userId = req.user ? req.user.userId : null;
       const { id } = req.params;
-      const news = await UserNews.findById(id);
+      const news = await UserNews.findById(id, userId);
 
       if (!news) {
         return res.status(404).json({ error: 'Haber bulunamadı' });
       }
 
+      console.log('[DEBUG] getNews - Article ID:', id, 'User ID:', userId, 'user_has_liked:', news.user_has_liked);
       res.json(news);
     } catch (error) {
       console.error('Error getting news:', error);
@@ -156,11 +174,22 @@ const newsController = {
       const { id } = req.params;
       const userId = req.user.userId;
 
+      // Get the news article to find the owner
+      const news = await UserNews.findById(id, userId);
+      if (!news) {
+        return res.status(404).json({ error: 'Haber bulunamadı' });
+      }
+
       const success = await UserNews.likeNews(id, userId);
 
       if (!success) {
         return res.status(400).json({ error: 'Bu haberi zaten beğendiniz' });
       }
+
+      // Create notification for the article owner (don't await)
+      Notification.createLikeNotification(id, userId, news.user_id).catch(err =>
+        console.error('Error creating like notification:', err)
+      );
 
       res.json({ message: 'Haber beğenildi' });
     } catch (error) {

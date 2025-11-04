@@ -20,6 +20,7 @@ const commentRoutes = require('./routes/commentRoutes');
 const draftRoutes = require('./routes/draftRoutes');
 const emailVerificationRoutes = require('./routes/emailVerification');
 const notificationRoutes = require('./routes/notificationRoutes');
+const bookmarkRoutes = require('./routes/bookmarkRoutes');
 
 const YouTubeService = require('./services/youtubeServiceNew');
 
@@ -59,6 +60,7 @@ app.use('/api/comments', apiLimiter, commentRoutes);
 app.use('/api/drafts', apiLimiter, draftRoutes);
 app.use('/api/email', emailVerificationRoutes);
 app.use('/api/notifications', apiLimiter, notificationRoutes);
+app.use('/api/bookmarks', apiLimiter, bookmarkRoutes);
 
 app.use(notFound);
 app.use(errorHandler);

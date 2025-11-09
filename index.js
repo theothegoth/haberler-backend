@@ -21,7 +21,8 @@ const draftRoutes = require('./routes/draftRoutes');
 const emailVerificationRoutes = require('./routes/emailVerification');
 const notificationRoutes = require('./routes/notificationRoutes');
 const bookmarkRoutes = require('./routes/bookmarkRoutes');
-
+const blockRoutes = require('./routes/blockRoutes');
+const reportRoutes = require('./routes/reportRoutes');
 const YouTubeService = require('./services/youtubeServiceNew');
 
 const logger = new Logger('SERVER');
@@ -60,6 +61,8 @@ app.use('/api/comments', apiLimiter, commentRoutes);
 app.use('/api/drafts', apiLimiter, draftRoutes);
 app.use('/api/email', emailVerificationRoutes);
 app.use('/api/notifications', apiLimiter, notificationRoutes);
+app.use('/api/blocks', apiLimiter, blockRoutes);
+app.use('/api/reports', apiLimiter, reportRoutes);
 app.use('/api/bookmarks', apiLimiter, bookmarkRoutes);
 
 app.use(notFound);

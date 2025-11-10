@@ -14,8 +14,8 @@ class UserNews {
   static async findById(newsId, userId = null) {
     const result = await pool.query(
       `SELECT un.*, u.username, u.email,
-              (SELECT COUNT(*) FROM news_likes WHERE news_id = un.id) as like_count,
-              (SELECT COUNT(*) FROM news_comments WHERE news_id = un.id) as comment_count,
+              (SELECT COUNT(*)::int FROM news_likes WHERE news_id = un.id) as like_count,
+              (SELECT COUNT(*)::int FROM news_comments WHERE news_id = un.id) as comment_count,
               EXISTS(SELECT 1 FROM news_likes WHERE news_id = un.id AND user_id = $2) as user_has_liked
        FROM user_news un
        JOIN users u ON un.user_id = u.id
@@ -28,8 +28,8 @@ class UserNews {
   static async findByUserId(userId, limit = 20, offset = 0) {
     const result = await pool.query(
       `SELECT un.*, u.username,
-              (SELECT COUNT(*) FROM news_likes WHERE news_id = un.id) as like_count,
-              (SELECT COUNT(*) FROM news_comments WHERE news_id = un.id) as comment_count
+              (SELECT COUNT(*)::int FROM news_likes WHERE news_id = un.id) as like_count,
+              (SELECT COUNT(*)::int FROM news_comments WHERE news_id = un.id) as comment_count
        FROM user_news un
        JOIN users u ON un.user_id = u.id
        WHERE un.user_id = $1
@@ -42,16 +42,20 @@ class UserNews {
 
   static async getNewsFeed(userId, limit = 20, offset = 0) {
     // Get news from users that the current user follows AND the user's own posts
+    // Exclude posts from blocked users
     const result = await pool.query(
       `SELECT un.*, u.username,
-              (SELECT COUNT(*) FROM news_likes WHERE news_id = un.id) as like_count,
-              (SELECT COUNT(*) FROM news_comments WHERE news_id = un.id) as comment_count,
-              (SELECT COUNT(*) > 0 FROM news_likes WHERE news_id = un.id AND user_id = $1) as user_has_liked
+              (SELECT COUNT(*)::int FROM news_likes WHERE news_id = un.id) as like_count,
+              (SELECT COUNT(*)::int FROM news_comments WHERE news_id = un.id) as comment_count,
+              (SELECT COUNT(*)::int > 0 FROM news_likes WHERE news_id = un.id AND user_id = $1) as user_has_liked
        FROM user_news un
        JOIN users u ON un.user_id = u.id
-       WHERE un.user_id = $1
+       WHERE (un.user_id = $1
           OR un.user_id IN (
             SELECT followed_id FROM user_follows WHERE follower_id = $1
+          ))
+          AND un.user_id NOT IN (
+            SELECT blocked_id FROM blocked_users WHERE blocker_id = $1
           )
        ORDER BY un.created_at DESC
        LIMIT $2 OFFSET $3`,
@@ -63,8 +67,8 @@ class UserNews {
   static async getAllPublic(limit = 20, offset = 0) {
     const result = await pool.query(
       `SELECT un.*, u.username,
-              (SELECT COUNT(*) FROM news_likes WHERE news_id = un.id) as like_count,
-              (SELECT COUNT(*) FROM news_comments WHERE news_id = un.id) as comment_count
+              (SELECT COUNT(*)::int FROM news_likes WHERE news_id = un.id) as like_count,
+              (SELECT COUNT(*)::int FROM news_comments WHERE news_id = un.id) as comment_count
        FROM user_news un
        JOIN users u ON un.user_id = u.id
        ORDER BY un.created_at DESC
@@ -114,6 +118,87 @@ class UserNews {
       [newsId, userId]
     );
     return result.rowCount > 0;
+  }
+
+  static async advancedSearch({ query, categories, author, tags, startDate, endDate, sortBy, limit, offset }) {
+    let conditions = [];
+    let params = [];
+    let paramIndex = 1;
+
+    if (query) {
+      conditions.push(`(un.title ILIKE \$${paramIndex} OR un.content ILIKE \$${paramIndex})`);
+      params.push(`%${query}%`);
+      paramIndex++;
+    }
+
+    if (categories && categories.length > 0) {
+      const categoryPlaceholders = categories.map((_, i) => `\$${paramIndex + i}`).join(',');
+      conditions.push(`un.category IN (${categoryPlaceholders})`);
+      params.push(...categories);
+      paramIndex += categories.length;
+    }
+
+    if (author) {
+      conditions.push(`u.username ILIKE \$${paramIndex}`);
+      params.push(`%${author}%`);
+      paramIndex++;
+    }
+
+    if (tags && tags.length > 0) {
+      const tagConditions = tags.map((_, i) => `\$${paramIndex + i} = ANY(un.tags)`).join(' OR ');
+      conditions.push(`(${tagConditions})`);
+      params.push(...tags);
+      paramIndex += tags.length;
+    }
+
+    if (startDate) {
+      conditions.push(`un.created_at >= \$${paramIndex}`);
+      params.push(startDate);
+      paramIndex++;
+    }
+
+    if (endDate) {
+      conditions.push(`un.created_at <= \$${paramIndex}`);
+      params.push(endDate);
+      paramIndex++;
+    }
+
+    const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
+
+    let orderBy;
+    switch (sortBy) {
+      case 'popularity':
+        orderBy = 'ORDER BY like_count DESC, view_count DESC, un.created_at DESC';
+        break;
+      case 'relevance':
+        if (query) {
+          orderBy = `ORDER BY CASE WHEN un.title ILIKE \ THEN 1 WHEN un.content ILIKE \ THEN 2 ELSE 3 END, like_count DESC, un.created_at DESC`;
+        } else {
+          orderBy = 'ORDER BY like_count DESC, un.created_at DESC';
+        }
+        break;
+      case 'date':
+      default:
+        orderBy = 'ORDER BY un.created_at DESC';
+    }
+
+    params.push(limit, offset);
+
+    const sql = `
+      SELECT 
+        un.*,
+        u.username,
+        (SELECT COUNT(*)::int FROM news_likes WHERE news_id = un.id) as like_count,
+        (SELECT COUNT(*)::int FROM news_comments WHERE news_id = un.id) as comment_count
+      FROM user_news un
+      JOIN users u ON un.user_id = u.id
+      ${whereClause}
+      ${orderBy}
+      LIMIT \$${paramIndex} OFFSET \$${paramIndex + 1}
+    `;
+
+    const result = await pool.query(sql, params);
+    return result.rows;
   }
 }
 

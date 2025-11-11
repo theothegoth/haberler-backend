@@ -94,7 +94,9 @@
       "Bash(\"/c/Program Files/PostgreSQL/17/bin/psql.exe\" -U postgres -d haber_db -c \"SELECT constraint_name FROM information_schema.constraint_column_usage WHERE table_name = ''reports'' AND constraint_name LIKE ''%type%'';\")",
       "Bash(\"C:/Program Files/PostgreSQL/17/bin/psql.exe\" -U postgres -d haber_db -c \"\\d article_views\")",
       "Bash(docker:*)",
-      "Bash(redis-cli:*)"
+      "Bash(redis-cli:*)",
+      "Bash(git remote:*)",
+      "Bash(npm test:*)"
     ],
     "deny": [],
     "ask": []

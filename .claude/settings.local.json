@@ -96,7 +96,8 @@
       "Bash(docker:*)",
       "Bash(redis-cli:*)",
       "Bash(git remote:*)",
-      "Bash(npm test:*)"
+      "Bash(npm test:*)",
+      "Bash(npm run test:integration:*)"
     ],
     "deny": [],
     "ask": []

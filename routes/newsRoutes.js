@@ -3,6 +3,7 @@ const router = express.Router();
 const newsController = require('../controllers/newsController');
 const { authenticate, optionalAuthenticate } = require('../middleware/auth');
 const articleImageUpload = require('../config/articleImageUpload');
+const { cacheMiddleware, cacheKeys } = require('../middleware/cacheMiddleware');
 
 // Image upload endpoint
 router.post('/upload-image', authenticate, articleImageUpload.single('image'), (req, res) => {
@@ -25,14 +26,14 @@ router.post('/upload-image', authenticate, articleImageUpload.single('image'), (
 
 // Protected routes (require authentication) - put these first to avoid conflicts
 router.post('/', authenticate, newsController.createNews);
-router.get('/feed/my-feed', authenticate, newsController.getNewsFeed);
-router.get('/my/articles', authenticate, newsController.getMyNews);
+router.get('/feed/my-feed', authenticate, cacheMiddleware(300, cacheKeys.newsFeed), newsController.getNewsFeed); // Cache 5 min
+router.get('/my/articles', authenticate, cacheMiddleware(300, cacheKeys.userArticles), newsController.getMyNews); // Cache 5 min
 
 // Public routes - put these after protected routes
-router.get('/search', newsController.searchNews);
-router.get('/all', newsController.getAllNews);
-router.get('/user/:userId', newsController.getUserNews);
-router.get('/:id', optionalAuthenticate, newsController.getNews);
+router.get('/search', cacheMiddleware(600, cacheKeys.explore), newsController.searchNews); // Cache 10 min
+router.get('/all', cacheMiddleware(300), newsController.getAllNews); // Cache 5 min
+router.get('/user/:userId', cacheMiddleware(300, cacheKeys.userArticles), newsController.getUserNews); // Cache 5 min
+router.get('/:id', optionalAuthenticate, cacheMiddleware(600, cacheKeys.articleDetail), newsController.getNews); // Cache 10 min
 router.put('/:id', authenticate, newsController.updateNews);
 router.delete('/:id', authenticate, newsController.deleteNews);
 router.post('/:id/like', authenticate, newsController.likeNews);

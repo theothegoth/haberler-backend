@@ -3,6 +3,7 @@ const Notification = require('../models/Notification');
 const ArticleView = require('../models/ArticleView');
 const pool = require('../config/database');
 const { validationResult } = require('express-validator');
+const { deleteCachePattern, deleteCache } = require('../config/cache');
 
 const newsController = {
   // Create a new news article
@@ -38,6 +39,10 @@ const newsController = {
           console.error('Error creating new article notifications:', err)
         );
       }
+
+      // Invalidate relevant caches
+      deleteCachePattern('news:feed:*').catch(err => console.error('Cache invalidation error:', err));
+      deleteCachePattern(`user:${userId}:articles:*`).catch(err => console.error('Cache invalidation error:', err));
 
       res.status(201).json(news);
     } catch (error) {
@@ -149,6 +154,11 @@ const newsController = {
         return res.status(404).json({ error: 'Haber bulunamadı veya güncelleme izniniz yok' });
       }
 
+      // Invalidate relevant caches
+      deleteCache(`article:${id}`).catch(err => console.error('Cache invalidation error:', err));
+      deleteCachePattern('news:feed:*').catch(err => console.error('Cache invalidation error:', err));
+      deleteCachePattern(`user:${userId}:articles:*`).catch(err => console.error('Cache invalidation error:', err));
+
       res.json(news);
     } catch (error) {
       console.error('Error updating news:', error);
@@ -167,6 +177,12 @@ const newsController = {
       if (!news) {
         return res.status(404).json({ error: 'Haber bulunamadı veya silme izniniz yok' });
       }
+
+      // Invalidate relevant caches
+      deleteCache(`article:${id}`).catch(err => console.error('Cache invalidation error:', err));
+      deleteCachePattern('news:feed:*').catch(err => console.error('Cache invalidation error:', err));
+      deleteCachePattern(`user:${userId}:articles:*`).catch(err => console.error('Cache invalidation error:', err));
+      deleteCachePattern(`comments:article:${id}`).catch(err => console.error('Cache invalidation error:', err));
 
       res.json({ message: 'Haber başarıyla silindi', news });
     } catch (error) {

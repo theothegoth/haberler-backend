@@ -2,6 +2,7 @@ const Comment = require('../models/Comment');
 const Notification = require('../models/Notification');
 const pool = require('../config/database');
 const { body, validationResult } = require('express-validator');
+const { deleteCache } = require('../config/cache');
 
 const createComment = async (req, res) => {
   try {
@@ -57,6 +58,9 @@ const createComment = async (req, res) => {
         }
       }
     }
+
+    // Invalidate comments cache for this article
+    deleteCache(`comments:article:${newsId}`).catch(err => console.error('Cache invalidation error:', err));
 
     res.status(201).json({
       message: 'Yorum başarıyla eklendi',
@@ -115,6 +119,13 @@ const deleteComment = async (req, res) => {
 
     if (!deletedComment) {
       return res.status(404).json({ error: 'Yorum bulunamadı veya silme yetkiniz yok.' });
+    }
+
+    // Invalidate comments cache for the article
+    if (deletedComment.news_id) {
+      deleteCache(`comments:article:${deletedComment.news_id}`).catch(err =>
+        console.error('Cache invalidation error:', err)
+      );
     }
 
     res.json({ message: 'Yorum başarıyla silindi' });

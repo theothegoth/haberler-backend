@@ -9,9 +9,10 @@ const {
   createCommentValidation
 } = require('../controllers/commentController');
 const { authenticate } = require('../middleware/auth');
+const { cacheMiddleware, cacheKeys } = require('../middleware/cacheMiddleware');
 
 // Get comments for a news article
-router.get('/:newsId', getComments);
+router.get('/:newsId', cacheMiddleware(300, cacheKeys.comments), getComments); // Cache 5 min
 
 // Create a comment (requires authentication)
 router.post('/:newsId', authenticate, createCommentValidation, createComment);

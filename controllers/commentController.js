@@ -7,14 +7,18 @@ const createComment = async (req, res) => {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
+      console.log('Validation errors:', errors.array());
+      return res.status(400).json({
+        error: errors.array()[0].msg,
+        errors: errors.array()
+      });
     }
 
     const { newsId } = req.params;
-    const { content } = req.body;
+    const { content, parentId } = req.body;
     const userId = req.user.userId;
 
-    const comment = await Comment.create(newsId, userId, content);
+    const comment = await Comment.create(newsId, userId, content, parentId);
 
     // Get the article owner to notify them
     const newsResult = await pool.query(
@@ -33,6 +37,27 @@ const createComment = async (req, res) => {
       }
     }
 
+    // If this is a reply, notify the parent comment owner
+    if (parentId) {
+      const parentResult = await pool.query(
+        'SELECT user_id FROM comments WHERE id = $1',
+        [parentId]
+      );
+
+      if (parentResult.rows.length > 0) {
+        const parentCommentOwnerId = parentResult.rows[0].user_id;
+
+        // Only notify if someone else replied (not replying to their own comment)
+        if (parentCommentOwnerId !== userId) {
+          // Note: You might want to create a new notification type for replies
+          // For now, using comment notification
+          Notification.createCommentNotification(newsId, userId, parentCommentOwnerId).catch(err =>
+            console.error('Error creating reply notification:', err)
+          );
+        }
+      }
+    }
+
     res.status(201).json({
       message: 'Yorum başarıyla eklendi',
       comment: {
@@ -42,6 +67,15 @@ const createComment = async (req, res) => {
     });
   } catch (error) {
     console.error('Create comment error:', error);
+    
+    // Handle specific validation errors from the model
+    if (error.message === 'Parent comment not found') {
+      return res.status(404).json({ error: 'Yanıtlanacak yorum bulunamadı' });
+    }
+    if (error.message === 'Cannot reply to a reply - only 1 level of nesting allowed') {
+      return res.status(400).json({ error: 'Bir yanıta yanıt verilemez - sadece 1 seviye iç içe geçmeye izin verilir' });
+    }
+    
     res.status(500).json({ error: 'Yorum eklenirken bir hata oluştu.' });
   }
 };
@@ -49,7 +83,21 @@ const createComment = async (req, res) => {
 const getComments = async (req, res) => {
   try {
     const { newsId } = req.params;
-    const comments = await Comment.getByNewsId(newsId);
+    const userId = req.user?.userId || null; // Get userId if authenticated, null otherwise
+
+    console.log('[BACKEND GET COMMENTS] NewsId:', newsId, 'UserId:', userId);
+
+    const comments = await Comment.getByNewsId(newsId, userId);
+
+    console.log('[BACKEND GET COMMENTS] Returning', comments.length, 'comments');
+    comments.forEach(c => {
+      console.log(`  Comment ${c.id}: like_count=${c.like_count}, user_has_liked=${c.user_has_liked}`);
+      if (c.replies) {
+        c.replies.forEach(r => {
+          console.log(`    Reply ${r.id}: like_count=${r.like_count}, user_has_liked=${r.user_has_liked}`);
+        });
+      }
+    });
 
     res.json(comments);
   } catch (error) {
@@ -76,18 +124,68 @@ const deleteComment = async (req, res) => {
   }
 };
 
+const likeComment = async (req, res) => {
+  try {
+    const { commentId } = req.params;
+    const userId = req.user.userId;
+
+    console.log('[BACKEND LIKE] User:', userId, 'attempting to LIKE comment:', commentId);
+
+    const success = await Comment.like(commentId, userId);
+
+    console.log('[BACKEND LIKE] Result:', success ? 'SUCCESS' : 'FAILED (already liked)');
+
+    if (!success) {
+      return res.status(400).json({ error: 'Bu yorumu zaten beğendiniz' });
+    }
+
+    res.json({ message: 'Yorum beğenildi' });
+  } catch (error) {
+    console.error('Like comment error:', error);
+    res.status(500).json({ error: 'Yorum beğenilirken bir hata oluştu.' });
+  }
+};
+
+const unlikeComment = async (req, res) => {
+  try {
+    const { commentId } = req.params;
+    const userId = req.user.userId;
+
+    console.log('[BACKEND UNLIKE] User:', userId, 'attempting to UNLIKE comment:', commentId);
+
+    const success = await Comment.unlike(commentId, userId);
+
+    console.log('[BACKEND UNLIKE] Result:', success ? 'SUCCESS' : 'FAILED (not liked)');
+
+    if (!success) {
+      return res.status(400).json({ error: 'Bu yorumu beğenmediniz' });
+    }
+
+    res.json({ message: 'Beğeni kaldırıldı' });
+  } catch (error) {
+    console.error('Unlike comment error:', error);
+    res.status(500).json({ error: 'Beğeni kaldırılırken bir hata oluştu.' });
+  }
+};
+
 const createCommentValidation = [
   body('content')
     .trim()
     .notEmpty()
     .withMessage('Yorum içeriği gereklidir')
     .isLength({ min: 1, max: 500 })
-    .withMessage('Yorum 1-500 karakter arasında olmalıdır')
+    .withMessage('Yorum 1-500 karakter arasında olmalıdır'),
+  body('parentId')
+    .optional({ nullable: true, checkFalsy: false })
+    .isInt()
+    .withMessage('Parent ID geçerli bir sayı olmalıdır')
 ];
 
 module.exports = {
   createComment,
   getComments,
   deleteComment,
+  likeComment,
+  unlikeComment,
   createCommentValidation
 };

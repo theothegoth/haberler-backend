@@ -116,6 +116,20 @@ class Report {
         [reportedId]
       );
       return result.rows[0] || null;
+    } else if (reportedType === 'user') {
+      const result = await pool.query(
+        `SELECT
+          u.id,
+          u.username,
+          u.email,
+          u.created_at,
+          (SELECT COUNT(*)::int FROM user_news WHERE user_id = u.id) as article_count,
+          (SELECT COUNT(*)::int FROM comments WHERE user_id = u.id) as comment_count
+         FROM users u
+         WHERE u.id = $1`,
+        [reportedId]
+      );
+      return result.rows[0] || null;
     }
     return null;
   }

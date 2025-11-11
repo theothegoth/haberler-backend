@@ -1,5 +1,6 @@
 const UserNews = require('../models/UserNews');
 const Notification = require('../models/Notification');
+const ArticleView = require('../models/ArticleView');
 const pool = require('../config/database');
 const { validationResult } = require('express-validator');
 
@@ -57,6 +58,12 @@ const newsController = {
       }
 
       console.log('[DEBUG] getNews - Article ID:', id, 'User ID:', userId, 'user_has_liked:', news.user_has_liked);
+      
+      // Track article view (don't wait for it)
+      const ipAddress = req.ip || req.connection.remoteAddress;
+      ArticleView.recordView(id, userId, ipAddress).catch(err => 
+        console.error('Error recording view:', err)
+      );
       res.json(news);
     } catch (error) {
       console.error('Error getting news:', error);
@@ -214,6 +221,40 @@ const newsController = {
     } catch (error) {
       console.error('Error unliking news:', error);
       res.status(500).json({ error: 'Beğeni kaldırılırken bir hata oluştu' });
+    }
+  },
+
+  // Advanced search with filters
+  async searchNews(req, res) {
+    try {
+      const {
+        q,              // search query
+        category,       // single or multiple categories (comma-separated)
+        author,         // author username
+        tags,           // tags (comma-separated)
+        startDate,      // date range start
+        endDate,        // date range end
+        sortBy = 'date', // date, relevance, popularity
+        limit = 20,
+        offset = 0
+      } = req.query;
+
+      const news = await UserNews.advancedSearch({
+        query: q,
+        categories: category ? category.split(',') : null,
+        author,
+        tags: tags ? tags.split(',') : null,
+        startDate,
+        endDate,
+        sortBy,
+        limit: parseInt(limit),
+        offset: parseInt(offset)
+      });
+
+      res.json(news);
+    } catch (error) {
+      console.error('Error searching news:', error);
+      res.status(500).json({ error: 'Arama yapılırken bir hata oluştu' });
     }
   }
 };

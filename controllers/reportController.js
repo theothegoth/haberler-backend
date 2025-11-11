@@ -140,7 +140,7 @@ const deleteReport = async (req, res) => {
 
 const createReportValidation = [
   body('reportedType')
-    .isIn(['article', 'comment'])
+    .isIn(['article', 'comment', 'user'])
     .withMessage('Geçersiz rapor türü'),
   body('reportedId')
     .isInt()

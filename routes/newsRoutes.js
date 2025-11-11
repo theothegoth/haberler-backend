@@ -29,6 +29,7 @@ router.get('/feed/my-feed', authenticate, newsController.getNewsFeed);
 router.get('/my/articles', authenticate, newsController.getMyNews);
 
 // Public routes - put these after protected routes
+router.get('/search', newsController.searchNews);
 router.get('/all', newsController.getAllNews);
 router.get('/user/:userId', newsController.getUserNews);
 router.get('/:id', optionalAuthenticate, newsController.getNews);

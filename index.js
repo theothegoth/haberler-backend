@@ -9,6 +9,7 @@ const corsOptions = require('./config/corsOptions');
 const { requestLogger, Logger } = require('./utils/logger');
 const { errorHandler, notFound } = require('./middleware/errorHandler');
 const { apiLimiter, authLimiter } = require('./middleware/rateLimiter');
+const { initializeRedis, closeRedis } = require('./config/cache');
 
 const authRoutes = require('./routes/authRoutes');
 const channelRoutes = require('./routes/channelRoutes');
@@ -78,6 +79,11 @@ cron.schedule('*/30 * * * *', async () => {
   }
 });
 
+// Initialize Redis cache
+initializeRedis().catch(err => {
+  logger.warn('Redis initialization failed, continuing without cache:', err.message);
+});
+
 const server = app.listen(port, () => {
   logger.info(`Backend running on http://localhost:${port}`);
   logger.info(`Health check available at http://localhost:${port}/api/health`);
@@ -89,6 +95,14 @@ const gracefulShutdown = async (signal) => {
 
   server.close(async () => {
     logger.info('HTTP server closed');
+
+    try {
+      // Close Redis connection
+      await closeRedis();
+      logger.info('Redis connection closed');
+    } catch (error) {
+      logger.error('Error closing Redis connection:', error);
+    }
 
     try {
       const pool = require('./config/database');

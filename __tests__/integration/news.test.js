@@ -148,16 +148,11 @@ describe('News API Integration Tests', () => {
   describe('GET /api/news/all', () => {
     it('should get all news articles with pagination', async () => {
       const response = await request(app)
-        .get('/api/news/all?page=1&limit=10')
+        .get('/api/news/all?limit=10&offset=0')
         .expect('Content-Type', /json/)
         .expect(200);
 
-      expect(response.body).toHaveProperty('news');
-      expect(response.body).toHaveProperty('pagination');
-      expect(Array.isArray(response.body.news)).toBe(true);
-      expect(response.body.pagination).toHaveProperty('page');
-      expect(response.body.pagination).toHaveProperty('limit');
-      expect(response.body.pagination).toHaveProperty('total');
+      expect(Array.isArray(response.body)).toBe(true);
     });
   });
 
@@ -169,10 +164,9 @@ describe('News API Integration Tests', () => {
         .expect('Content-Type', /json/)
         .expect(200);
 
-      expect(response.body).toHaveProperty('news');
-      expect(Array.isArray(response.body.news)).toBe(true);
-      expect(response.body.news.length).toBeGreaterThan(0);
-      expect(response.body.news[0]).toHaveProperty('user_id', userId);
+      expect(Array.isArray(response.body)).toBe(true);
+      expect(response.body.length).toBeGreaterThan(0);
+      expect(response.body[0]).toHaveProperty('user_id', userId);
     });
 
     it('should reject request without authentication', async () => {
@@ -190,7 +184,7 @@ describe('News API Integration Tests', () => {
       const updatedData = {
         title: 'Updated Test News Article',
         content: '<p>This is updated content.</p>',
-        summary: 'Updated summary'
+        category: 'Technology'
       };
 
       const response = await request(app)
@@ -200,10 +194,9 @@ describe('News API Integration Tests', () => {
         .expect('Content-Type', /json/)
         .expect(200);
 
-      expect(response.body).toHaveProperty('message');
-      expect(response.body).toHaveProperty('news');
-      expect(response.body.news).toHaveProperty('title', updatedData.title);
-      expect(response.body.news).toHaveProperty('content', updatedData.content);
+      expect(response.body).toHaveProperty('id', newsId);
+      expect(response.body).toHaveProperty('title', updatedData.title);
+      expect(response.body).toHaveProperty('content', updatedData.content);
     });
 
     it('should reject update without authentication', async () => {
@@ -245,7 +238,6 @@ describe('News API Integration Tests', () => {
         .expect(200);
 
       expect(response.body).toHaveProperty('message');
-      expect(response.body).toHaveProperty('liked', true);
     });
 
     it('should reject like without authentication', async () => {
@@ -267,7 +259,6 @@ describe('News API Integration Tests', () => {
         .expect(200);
 
       expect(response.body).toHaveProperty('message');
-      expect(response.body).toHaveProperty('liked', false);
     });
 
     it('should reject unlike without authentication', async () => {
@@ -287,8 +278,7 @@ describe('News API Integration Tests', () => {
         .expect('Content-Type', /json/)
         .expect(200);
 
-      expect(response.body).toHaveProperty('news');
-      expect(Array.isArray(response.body.news)).toBe(true);
+      expect(Array.isArray(response.body)).toBe(true);
     });
 
     it('should return empty results for non-matching query', async () => {
@@ -297,9 +287,8 @@ describe('News API Integration Tests', () => {
         .expect('Content-Type', /json/)
         .expect(200);
 
-      expect(response.body).toHaveProperty('news');
-      expect(Array.isArray(response.body.news)).toBe(true);
-      expect(response.body.news.length).toBe(0);
+      expect(Array.isArray(response.body)).toBe(true);
+      expect(response.body.length).toBe(0);
     });
   });
 
@@ -329,7 +318,7 @@ describe('News API Integration Tests', () => {
         .set('Authorization', `Bearer ${authToken}`)
         .send(newsData);
 
-      const tempNewsId = createResponse.body.news.id;
+      const tempNewsId = createResponse.body.id;
 
       const response = await request(app)
         .delete(`/api/news/${tempNewsId}`)

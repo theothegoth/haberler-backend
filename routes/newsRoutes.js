@@ -4,9 +4,10 @@ const newsController = require('../controllers/newsController');
 const { authenticate, optionalAuthenticate } = require('../middleware/auth');
 const articleImageUpload = require('../config/articleImageUpload');
 const { cacheMiddleware, cacheKeys } = require('../middleware/cacheMiddleware');
+const { uploadLimiter, createLimiter } = require('../middleware/rateLimiter');
 
 // Image upload endpoint
-router.post('/upload-image', authenticate, articleImageUpload.single('image'), (req, res) => {
+router.post('/upload-image', authenticate, uploadLimiter, articleImageUpload.single('image'), (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ message: 'No image file uploaded' });
@@ -25,7 +26,7 @@ router.post('/upload-image', authenticate, articleImageUpload.single('image'), (
 });
 
 // Protected routes (require authentication) - put these first to avoid conflicts
-router.post('/', authenticate, newsController.createNews);
+router.post('/', authenticate, createLimiter, newsController.createNews);
 router.get('/feed/my-feed', authenticate, cacheMiddleware(300, cacheKeys.newsFeed), newsController.getNewsFeed); // Cache 5 min
 router.get('/my/articles', authenticate, cacheMiddleware(300, cacheKeys.userArticles), newsController.getMyNews); // Cache 5 min
 

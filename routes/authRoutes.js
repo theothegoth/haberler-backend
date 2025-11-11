@@ -18,14 +18,15 @@ const {
 } = require('../controllers/authController');
 const { authenticate } = require('../middleware/auth');
 const upload = require('../config/upload');
+const { uploadLimiter, passwordResetLimiter } = require('../middleware/rateLimiter');
 
 router.post('/register', registerValidation, register);
 router.post('/login', loginValidation, login);
 router.get('/profile', authenticate, getProfile);
 router.put('/profile', authenticate, updateProfileValidation, updateProfile);
 router.put('/password', authenticate, changePasswordValidation, changePassword);
-router.post('/upload-profile-picture', authenticate, upload.single('profilePicture'), uploadProfilePicture);
-router.post('/forgot-password', forgotPasswordValidation, forgotPassword);
-router.post('/reset-password', resetPasswordValidation, resetPassword);
+router.post('/upload-profile-picture', authenticate, uploadLimiter, upload.single('profilePicture'), uploadProfilePicture);
+router.post('/forgot-password', passwordResetLimiter, forgotPasswordValidation, forgotPassword);
+router.post('/reset-password', passwordResetLimiter, resetPasswordValidation, resetPassword);
 
 module.exports = router;

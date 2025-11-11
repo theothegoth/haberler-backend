@@ -7,9 +7,25 @@ const path = require('path');
 const validateEnv = require('./config/validateEnv');
 const corsOptions = require('./config/corsOptions');
 const { requestLogger, Logger } = require('./utils/logger');
-const { errorHandler, notFound } = require('./middleware/errorHandler');
-const { apiLimiter, authLimiter } = require('./middleware/rateLimiter');
+const { errorHandler, notFound} = require('./middleware/errorHandler');
+const {
+  apiLimiter,
+  authLimiter,
+  uploadLimiter,
+  createLimiter,
+  passwordResetLimiter
+} = require('./middleware/rateLimiter');
 const { initializeRedis, closeRedis } = require('./config/cache');
+const {
+  helmetConfig,
+  sanitizeData,
+  preventHpp,
+  xssProtection,
+  securityHeaders,
+  httpsRedirect,
+  requestSizeLimiter,
+  attackPatternDetection
+} = require('./middleware/security');
 
 const authRoutes = require('./routes/authRoutes');
 const channelRoutes = require('./routes/channelRoutes');
@@ -33,13 +49,29 @@ validateEnv();
 const app = express();
 const port = process.env.PORT || 5000;
 
+// Security middleware - must be applied early
+app.use(helmetConfig); // Security headers
+app.use(httpsRedirect); // HTTPS redirect in production
+app.use(securityHeaders); // Additional security headers
+app.use(requestSizeLimiter); // Prevent large payload attacks
+app.use(attackPatternDetection); // Detect malicious patterns
+
+// CORS
 app.use(cors(corsOptions));
+
+// Body parsers with size limits
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// Data sanitization (must be after body parsers)
+app.use(sanitizeData); // NoSQL injection protection
+app.use(xssProtection); // XSS protection
+app.use(preventHpp); // HTTP parameter pollution protection
 
 // Serve uploaded files statically
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
+// Request logging
 app.use(requestLogger);
 
 app.get('/api/health', (req, res) => {

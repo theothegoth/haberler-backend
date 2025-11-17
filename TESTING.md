@@ -19,8 +19,12 @@ __tests__/
 │   └── validators.test.js      # Validator utility tests (32 tests)
 └── integration/                # Integration tests
     ├── auth.test.js            # Authentication API tests (23 tests)
-    └── news.test.js            # News/Articles API tests (21 tests)
+    ├── news.test.js            # News/Articles API tests (21 tests)
+    ├── comments.test.js        # Comments API tests (14 tests)
+    └── follow.test.js          # Follow/Unfollow API tests (24 tests)
 ```
+
+**Total:** 114 tests (32 unit + 82 integration)
 
 ## Running Tests
 
@@ -109,7 +113,7 @@ Tests for utility functions in `utils/validators.js`:
   - Invalid input handling
   - Offset calculation
 
-### Integration Tests (44 tests)
+### Integration Tests (82 tests)
 
 #### Authentication API (23 tests)
 
@@ -190,6 +194,80 @@ Tests for utility functions in `utils/validators.js`:
 - ✓ Delete own news article
 - ✓ Reject deletion without authentication
 - ✓ Return 404 for non-existent news
+
+#### Comments API (14 tests)
+
+**File**: `__tests__/integration/comments.test.js`
+
+**POST /api/comments/:newsId** (4 tests)
+- ✓ Create a comment with valid data
+- ✓ Reject comment creation without authentication
+- ✓ Reject comment with missing content
+- ✓ Reject comment for non-existent news
+
+**GET /api/comments/:newsId** (2 tests)
+- ✓ Get comments for a news article
+- ✓ Return empty array for article with no comments
+
+**POST /api/comments/:commentId/like** (3 tests)
+- ✓ Like a comment
+- ✓ Reject like without authentication
+- ✓ Return error for non-existent comment
+
+**DELETE /api/comments/:commentId/like** (2 tests)
+- ✓ Unlike a comment
+- ✓ Reject unlike without authentication
+
+**DELETE /api/comments/:commentId** (3 tests)
+- ✓ Delete own comment
+- ✓ Reject deletion without authentication
+- ✓ Return 404 for non-existent comment
+
+#### Follow API (24 tests)
+
+**File**: `__tests__/integration/follow.test.js`
+
+**POST /api/follow/:userId** (5 tests)
+- ✓ Follow a user with valid authentication
+- ✓ Reject follow without authentication
+- ✓ Reject following self
+- ✓ Reject following non-existent user
+- ✓ Reject duplicate follow
+
+**GET /api/follow/:userId/check** (3 tests)
+- ✓ Check if following a user
+- ✓ Return false when not following
+- ✓ Reject check without authentication
+
+**GET /api/follow/:userId/counts** (2 tests)
+- ✓ Get follow counts for a user
+- ✓ Reject counts request without authentication
+
+**GET /api/follow/:userId/followers** (2 tests)
+- ✓ Get followers list for a user
+- ✓ Reject followers request without authentication
+
+**GET /api/follow/:userId/following** (2 tests)
+- ✓ Get following list for a user
+- ✓ Reject following request without authentication
+
+**GET /api/follow/my/followers** (2 tests)
+- ✓ Get own followers list
+- ✓ Reject request without authentication
+
+**GET /api/follow/my/following** (2 tests)
+- ✓ Get own following list
+- ✓ Reject request without authentication
+
+**GET /api/follow/suggestions/users** (2 tests)
+- ✓ Get suggested users to follow
+- ✓ Reject request without authentication
+
+**DELETE /api/follow/:userId** (4 tests)
+- ✓ Unfollow a user
+- ✓ Reject unfollow without authentication
+- ✓ Handle unfollowing when not following
+- ✓ Handle unfollowing non-existent user
 
 ## Test Configuration
 
@@ -342,13 +420,16 @@ jobs:
 
 ## Future Improvements
 
-- [ ] Add tests for comment endpoints
-- [ ] Add tests for follow/unfollow functionality
+- [x] Add tests for comment endpoints (14 tests completed)
+- [x] Add tests for follow/unfollow functionality (24 tests completed)
 - [ ] Add tests for draft management
 - [ ] Add tests for notification system
 - [ ] Add tests for bookmark functionality
 - [ ] Add tests for user blocking
 - [ ] Add tests for reporting system
+- [ ] Add tests for analytics endpoints
+- [ ] Add tests for recommendation system
+- [ ] Add tests for email preferences
 - [ ] Increase code coverage to 80%+
 - [ ] Add E2E tests with Playwright or Cypress
 - [ ] Add performance/load testing

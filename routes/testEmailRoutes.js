@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { authenticate } = require('../middleware/authenticate');
+const { authenticate } = require('../middleware/auth');
 const { runManualDigest } = require('../jobs/weeklyDigest');
 const { sendNewFollowerEmail, sendNewCommentEmail, sendNewLikeEmail } = require('../services/emailService');
 const pool = require('../config/database');

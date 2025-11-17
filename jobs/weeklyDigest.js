@@ -2,7 +2,7 @@ const cron = require('node-cron');
 const pool = require('../config/database');
 const { sendWeeklyDigestEmail } = require('../services/emailService');
 const { getUsersWithWeeklyDigest } = require('../controllers/emailPreferencesController');
-const Logger = require('../utils/logger');
+const { Logger } = require('../utils/logger');
 
 const logger = new Logger('WEEKLY_DIGEST');
 

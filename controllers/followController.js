@@ -1,5 +1,8 @@
 const UserFollow = require('../models/UserFollow');
 const Notification = require('../models/Notification');
+const { sendNewFollowerEmail } = require('../services/emailService');
+const { checkPreference } = require('../controllers/emailPreferencesController');
+const pool = require('../config/database');
 
 const followController = {
   // Follow a user
@@ -14,6 +17,34 @@ const followController = {
       Notification.createFollowNotification(parseInt(userId), followerId).catch(err =>
         console.error('Error creating follow notification:', err)
       );
+
+      // Send email notification if user has it enabled
+      (async () => {
+        try {
+          const hasEmailEnabled = await checkPreference(parseInt(userId), 'new_follower');
+          if (hasEmailEnabled) {
+            const followedUser = await pool.query(
+              'SELECT email, username FROM users WHERE id = $1',
+              [parseInt(userId)]
+            );
+            const followerUser = await pool.query(
+              'SELECT username FROM users WHERE id = $1',
+              [followerId]
+            );
+
+            if (followedUser.rows[0] && followerUser.rows[0]) {
+              await sendNewFollowerEmail(
+                followedUser.rows[0].email,
+                followedUser.rows[0].username,
+                followerUser.rows[0].username,
+                followerId
+              );
+            }
+          }
+        } catch (emailError) {
+          console.error('Error sending follower email:', emailError);
+        }
+      })();
 
       res.status(201).json({ message: 'Kullanıcı takip edildi', follow });
     } catch (error) {

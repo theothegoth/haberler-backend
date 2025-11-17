@@ -3,6 +3,8 @@ const Notification = require('../models/Notification');
 const pool = require('../config/database');
 const { body, validationResult } = require('express-validator');
 const { deleteCache } = require('../config/cache');
+const { sendNewCommentEmail } = require('../services/emailService');
+const { checkPreference } = require('./emailPreferencesController');
 
 const createComment = async (req, res) => {
   try {
@@ -23,18 +25,49 @@ const createComment = async (req, res) => {
 
     // Get the article owner to notify them
     const newsResult = await pool.query(
-      'SELECT user_id FROM user_news WHERE id = $1',
+      'SELECT user_id, title FROM user_news WHERE id = $1',
       [newsId]
     );
 
     if (newsResult.rows.length > 0) {
       const newsOwnerId = newsResult.rows[0].user_id;
+      const articleTitle = newsResult.rows[0].title;
 
       // Only notify if someone else commented (not the owner themselves)
       if (newsOwnerId !== userId) {
         Notification.createCommentNotification(newsId, userId, newsOwnerId).catch(err =>
           console.error('Error creating comment notification:', err)
         );
+
+        // Send email notification if user has it enabled
+        (async () => {
+          try {
+            const hasEmailEnabled = await checkPreference(newsOwnerId, 'new_comment');
+            if (hasEmailEnabled) {
+              const ownerResult = await pool.query(
+                'SELECT email, username FROM users WHERE id = $1',
+                [newsOwnerId]
+              );
+              const commenterResult = await pool.query(
+                'SELECT username FROM users WHERE id = $1',
+                [userId]
+              );
+
+              if (ownerResult.rows[0] && commenterResult.rows[0]) {
+                await sendNewCommentEmail(
+                  ownerResult.rows[0].email,
+                  ownerResult.rows[0].username,
+                  commenterResult.rows[0].username,
+                  newsId,
+                  articleTitle,
+                  content
+                );
+              }
+            }
+          } catch (emailError) {
+            console.error('Error sending comment email:', emailError);
+          }
+        })();
       }
     }
 

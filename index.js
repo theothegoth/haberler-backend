@@ -44,6 +44,7 @@ const analyticsRoutes = require('./routes/analytics');
 const recommendationRoutes = require('./routes/recommendationRoutes');
 const emailPreferencesRoutes = require('./routes/emailPreferencesRoutes');
 const YouTubeService = require('./services/youtubeServiceNew');
+const { scheduleWeeklyDigest } = require('./jobs/weeklyDigest');
 
 const logger = new Logger('SERVER');
 
@@ -146,6 +147,13 @@ app.use('/api/analytics', apiLimiter, analyticsRoutes);
 app.use('/api/recommendations', apiLimiter, recommendationRoutes);
 app.use('/api/email-preferences', apiLimiter, emailPreferencesRoutes);
 
+// Test email routes (only in development)
+if (process.env.NODE_ENV !== 'production') {
+  const testEmailRoutes = require('./routes/testEmailRoutes');
+  app.use('/api/test-emails', apiLimiter, testEmailRoutes);
+  logger.info('Test email routes enabled (development mode)');
+}
+
 app.use(notFound);
 app.use(errorHandler);
 
@@ -168,6 +176,9 @@ const server = app.listen(port, () => {
   logger.info(`Backend running on http://localhost:${port}`);
   logger.info(`Health check available at http://localhost:${port}/api/health`);
   logger.info(`Environment: ${process.env.NODE_ENV}`);
+
+  // Start scheduled jobs
+  scheduleWeeklyDigest();
 });
 
 const gracefulShutdown = async (signal) => {

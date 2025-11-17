@@ -4,6 +4,8 @@ const ArticleView = require('../models/ArticleView');
 const pool = require('../config/database');
 const { validationResult } = require('express-validator');
 const { deleteCachePattern, deleteCache } = require('../config/cache');
+const { sendNewLikeEmail } = require('../services/emailService');
+const { checkPreference } = require('./emailPreferencesController');
 
 const newsController = {
   // Create a new news article
@@ -209,10 +211,42 @@ const newsController = {
         return res.status(400).json({ error: 'Bu haberi zaten beğendiniz' });
       }
 
-      // Create notification for the article owner (don't await)
-      Notification.createLikeNotification(id, userId, news.user_id).catch(err =>
-        console.error('Error creating like notification:', err)
-      );
+      // Only notify and send email if the liker is not the article owner
+      if (news.user_id !== userId) {
+        // Create notification for the article owner (don't await)
+        Notification.createLikeNotification(id, userId, news.user_id).catch(err =>
+          console.error('Error creating like notification:', err)
+        );
+
+        // Send email notification if user has it enabled
+        (async () => {
+          try {
+            const hasEmailEnabled = await checkPreference(news.user_id, 'new_like');
+            if (hasEmailEnabled) {
+              const ownerResult = await pool.query(
+                'SELECT email, username FROM users WHERE id = $1',
+                [news.user_id]
+              );
+              const likerResult = await pool.query(
+                'SELECT username FROM users WHERE id = $1',
+                [userId]
+              );
+
+              if (ownerResult.rows[0] && likerResult.rows[0]) {
+                await sendNewLikeEmail(
+                  ownerResult.rows[0].email,
+                  ownerResult.rows[0].username,
+                  likerResult.rows[0].username,
+                  id,
+                  news.title
+                );
+              }
+            }
+          } catch (emailError) {
+            console.error('Error sending like email:', emailError);
+          }
+        })();
+      }
 
       res.json({ message: 'Haber beğenildi' });
     } catch (error) {

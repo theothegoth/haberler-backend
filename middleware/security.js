@@ -26,6 +26,9 @@ const helmetConfig = helmet({
     },
   },
 
+  // Cross-Origin-Resource-Policy: Disabled to allow cross-origin image loading
+  crossOriginResourcePolicy: false,
+
   // X-Content-Type-Options: nosniff
   // Prevents MIME type sniffing
   contentTypeOptions: {

@@ -4,6 +4,7 @@ const {
   register,
   login,
   getProfile,
+  getPublicProfile,
   updateProfile,
   changePassword,
   uploadProfilePicture,
@@ -23,6 +24,7 @@ const { uploadLimiter, passwordResetLimiter } = require('../middleware/rateLimit
 router.post('/register', registerValidation, register);
 router.post('/login', loginValidation, login);
 router.get('/profile', authenticate, getProfile);
+router.get('/user/:userId', getPublicProfile);
 router.put('/profile', authenticate, updateProfileValidation, updateProfile);
 router.put('/password', authenticate, changePasswordValidation, changePassword);
 router.post('/upload-profile-picture', authenticate, uploadLimiter, upload.single('profilePicture'), uploadProfilePicture);

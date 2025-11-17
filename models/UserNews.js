@@ -13,9 +13,9 @@ class UserNews {
 
   static async findById(newsId, userId = null) {
     const result = await pool.query(
-      `SELECT un.*, u.username, u.email,
+      `SELECT un.*, u.username, u.bio as user_bio, u.profile_picture as user_profile_picture, u.email,
               (SELECT COUNT(*)::int FROM news_likes WHERE news_id = un.id) as like_count,
-              (SELECT COUNT(*)::int FROM news_comments WHERE news_id = un.id) as comment_count,
+              (SELECT COUNT(*)::int FROM comments WHERE news_id = un.id) as comment_count,
               EXISTS(SELECT 1 FROM news_likes WHERE news_id = un.id AND user_id = $2) as user_has_liked
        FROM user_news un
        JOIN users u ON un.user_id = u.id
@@ -27,9 +27,9 @@ class UserNews {
 
   static async findByUserId(userId, limit = 20, offset = 0) {
     const result = await pool.query(
-      `SELECT un.*, u.username,
+      `SELECT un.*, u.username, u.bio as user_bio, u.profile_picture as user_profile_picture,
               (SELECT COUNT(*)::int FROM news_likes WHERE news_id = un.id) as like_count,
-              (SELECT COUNT(*)::int FROM news_comments WHERE news_id = un.id) as comment_count
+              (SELECT COUNT(*)::int FROM comments WHERE news_id = un.id) as comment_count
        FROM user_news un
        JOIN users u ON un.user_id = u.id
        WHERE un.user_id = $1
@@ -44,9 +44,9 @@ class UserNews {
     // Get news from users that the current user follows AND the user's own posts
     // Exclude posts from blocked users
     const result = await pool.query(
-      `SELECT un.*, u.username,
+      `SELECT un.*, u.username, u.bio as user_bio, u.profile_picture as user_profile_picture,
               (SELECT COUNT(*)::int FROM news_likes WHERE news_id = un.id) as like_count,
-              (SELECT COUNT(*)::int FROM news_comments WHERE news_id = un.id) as comment_count,
+              (SELECT COUNT(*)::int FROM comments WHERE news_id = un.id) as comment_count,
               (SELECT COUNT(*)::int > 0 FROM news_likes WHERE news_id = un.id AND user_id = $1) as user_has_liked
        FROM user_news un
        JOIN users u ON un.user_id = u.id
@@ -66,9 +66,9 @@ class UserNews {
 
   static async getAllPublic(limit = 20, offset = 0) {
     const result = await pool.query(
-      `SELECT un.*, u.username,
+      `SELECT un.*, u.username, u.bio as user_bio, u.profile_picture as user_profile_picture,
               (SELECT COUNT(*)::int FROM news_likes WHERE news_id = un.id) as like_count,
-              (SELECT COUNT(*)::int FROM news_comments WHERE news_id = un.id) as comment_count
+              (SELECT COUNT(*)::int FROM comments WHERE news_id = un.id) as comment_count
        FROM user_news un
        JOIN users u ON un.user_id = u.id
        ORDER BY un.created_at DESC

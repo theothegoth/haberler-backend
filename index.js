@@ -40,6 +40,9 @@ const notificationRoutes = require('./routes/notificationRoutes');
 const bookmarkRoutes = require('./routes/bookmarkRoutes');
 const blockRoutes = require('./routes/blockRoutes');
 const reportRoutes = require('./routes/reportRoutes');
+const analyticsRoutes = require('./routes/analytics');
+const recommendationRoutes = require('./routes/recommendationRoutes');
+const emailPreferencesRoutes = require('./routes/emailPreferencesRoutes');
 const YouTubeService = require('./services/youtubeServiceNew');
 
 const logger = new Logger('SERVER');
@@ -49,15 +52,60 @@ validateEnv();
 const app = express();
 const port = process.env.PORT || 5000;
 
-// Security middleware - must be applied early
-app.use(helmetConfig); // Security headers
-app.use(httpsRedirect); // HTTPS redirect in production
-app.use(securityHeaders); // Additional security headers
-app.use(requestSizeLimiter); // Prevent large payload attacks
-app.use(attackPatternDetection); // Detect malicious patterns
+// Serve uploaded files with explicit route handler to bypass all middleware
+app.get('/uploads/:folder/:filename', (req, res) => {
+  // Set CORS headers explicitly
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET');
+  res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+  res.setHeader('Cross-Origin-Embedder-Policy', 'unsafe-none');
 
-// CORS
-app.use(cors(corsOptions));
+  // Build file path
+  const filePath = path.join(__dirname, 'uploads', req.params.folder, req.params.filename);
+
+  // Send file
+  res.sendFile(filePath, (err) => {
+    if (err) {
+      logger.error('Error serving file:', err);
+      res.status(404).json({ error: 'File not found' });
+    }
+  });
+});
+
+// Security middleware - applied to all routes EXCEPT /uploads
+app.use((req, res, next) => {
+  // Skip all security middleware for uploads
+  if (req.path.startsWith('/uploads/')) {
+    return next();
+  }
+  helmetConfig(req, res, next);
+});
+
+app.use((req, res, next) => {
+  if (req.path.startsWith('/uploads/')) return next();
+  httpsRedirect(req, res, next);
+});
+
+app.use((req, res, next) => {
+  if (req.path.startsWith('/uploads/')) return next();
+  securityHeaders(req, res, next);
+});
+
+app.use((req, res, next) => {
+  if (req.path.startsWith('/uploads/')) return next();
+  requestSizeLimiter(req, res, next);
+});
+
+app.use((req, res, next) => {
+  if (req.path.startsWith('/uploads/')) return next();
+  attackPatternDetection(req, res, next);
+});
+
+// CORS - skip for uploads as we set headers manually
+app.use((req, res, next) => {
+  if (req.path.startsWith('/uploads/')) return next();
+  cors(corsOptions)(req, res, next);
+});
 
 // Body parsers with size limits
 app.use(express.json({ limit: '10mb' }));
@@ -67,9 +115,6 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(sanitizeData); // NoSQL injection protection
 app.use(xssProtection); // XSS protection
 app.use(preventHpp); // HTTP parameter pollution protection
-
-// Serve uploaded files statically
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Request logging
 app.use(requestLogger);
@@ -97,6 +142,9 @@ app.use('/api/notifications', apiLimiter, notificationRoutes);
 app.use('/api/blocks', apiLimiter, blockRoutes);
 app.use('/api/reports', apiLimiter, reportRoutes);
 app.use('/api/bookmarks', apiLimiter, bookmarkRoutes);
+app.use('/api/analytics', apiLimiter, analyticsRoutes);
+app.use('/api/recommendations', apiLimiter, recommendationRoutes);
+app.use('/api/email-preferences', apiLimiter, emailPreferencesRoutes);
 
 app.use(notFound);
 app.use(errorHandler);

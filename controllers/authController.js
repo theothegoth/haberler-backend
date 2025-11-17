@@ -128,6 +128,8 @@ const getProfile = async (req, res) => {
         id: user.id,
         email: user.email,
         username: user.username,
+        bio: user.bio,
+        profile_picture: user.profile_picture,
         countryCode: user.country_code,
         createdAt: user.created_at,
         emailVerified: user.email_verified || false
@@ -136,6 +138,29 @@ const getProfile = async (req, res) => {
   } catch (error) {
     console.error('Profil getirme hatası:', error);
     res.status(500).json({ error: 'Profil bilgileri alınamadı.' });
+  }
+};
+
+const getPublicProfile = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const user = await User.findPublicProfile(userId);
+    if (!user) {
+      return res.status(404).json({ error: 'Kullanıcı bulunamadı.' });
+    }
+
+    res.json({
+      user: {
+        id: user.id,
+        username: user.username,
+        bio: user.bio,
+        profile_picture: user.profile_picture,
+        createdAt: user.created_at
+      }
+    });
+  } catch (error) {
+    console.error('Public profil getirme hatası:', error);
+    res.status(500).json({ error: 'Kullanıcı profili alınamadı.' });
   }
 };
 
@@ -176,6 +201,7 @@ const updateProfile = async (req, res) => {
         email: updatedUser.email,
         username: updatedUser.username,
         bio: updatedUser.bio,
+        profile_picture: updatedUser.profile_picture,
         countryCode: updatedUser.country_code,
         emailVerified: updatedUser.email_verified || false
       }
@@ -251,7 +277,7 @@ const uploadProfilePicture = async (req, res) => {
         email: updatedUser.email,
         username: updatedUser.username,
         bio: updatedUser.bio,
-        profilePicture: updatedUser.profile_picture,
+        profile_picture: updatedUser.profile_picture,
         countryCode: updatedUser.country_code,
         emailVerified: updatedUser.email_verified || false
       }
@@ -338,6 +364,7 @@ module.exports = {
   register,
   login,
   getProfile,
+  getPublicProfile,
   updateProfile,
   changePassword,
   uploadProfilePicture,

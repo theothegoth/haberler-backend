@@ -31,7 +31,15 @@ class User {
 
   static async findById(id) {
     const result = await pool.query(
-      'SELECT id, email, username, country_code, created_at FROM users WHERE id = $1',
+      'SELECT id, email, username, bio, profile_picture, country_code, created_at, email_verified FROM users WHERE id = $1',
+      [id]
+    );
+    return result.rows[0];
+  }
+
+  static async findPublicProfile(id) {
+    const result = await pool.query(
+      'SELECT id, username, bio, profile_picture, created_at FROM users WHERE id = $1',
       [id]
     );
     return result.rows[0];

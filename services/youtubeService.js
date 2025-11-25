@@ -275,15 +275,16 @@ async function addChannelFromInput(input, countryCode = 'TR') {
   channels.push({ channelId, channelTitle });
   await saveChannelList(channels, countryCode);
 
-  const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+  // Fetch videos from last 48 hours (to match the Watch page cache window)
+  const twoDaysAgo = new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString();
   const videoRes = await axios.get('https://youtube.googleapis.com/youtube/v3/search', {
     params: {
       part: 'snippet',
       channelId,
       type: 'video',
       order: 'date',
-      publishedAfter: yesterday,
-      maxResults: 1,
+      publishedAfter: twoDaysAgo,
+      maxResults: 5,
       key: apiKey
     }
   });
@@ -291,35 +292,47 @@ async function addChannelFromInput(input, countryCode = 'TR') {
   let videosCache = await loadVideosCache(countryCode);
 
   if (videoRes.data.items?.length) {
-    const video = videoRes.data.items[0];
-    const videoId = video.id.videoId;
+    // Get all video IDs from the search results
+    const videoIds = videoRes.data.items.map(item => item.id.videoId).join(',');
 
+    // Fetch statistics for all videos at once
     const statsRes = await axios.get('https://youtube.googleapis.com/youtube/v3/videos', {
       params: {
         part: 'statistics,snippet',
-        id: videoId,
+        id: videoIds,
         key: apiKey
       }
     });
 
-    const stats = statsRes.data.items?.[0];
-    const likeCount = parseInt(stats?.statistics?.likeCount) || 0;
-    const category = stats?.snippet?.categoryId || null;
+    // Add all videos to cache
+    for (const video of videoRes.data.items) {
+      const videoId = video.id.videoId;
 
-    videosCache.push({
-      videoId,
-      channelTitle,
-      title: video.snippet.title,
-      thumbnail: video.snippet.thumbnails.medium.url,
-      publishedAt: video.snippet.publishedAt,
-      likeCount,
-      category
-    });
+      // Skip if already in cache
+      if (videosCache.some(v => v.videoId === videoId)) {
+        continue;
+      }
+
+      const stats = statsRes.data.items?.find(item => item.id === videoId);
+      const likeCount = parseInt(stats?.statistics?.likeCount) || 0;
+      const category = stats?.snippet?.categoryId || null;
+
+      videosCache.push({
+        videoId,
+        channelTitle,
+        title: video.snippet.title,
+        thumbnail: video.snippet.thumbnails.medium.url,
+        publishedAt: video.snippet.publishedAt,
+        likeCount,
+        category
+      });
+    }
 
     await saveVideosCache(videosCache, countryCode);
   }
 
-  return { message: `✅ Kanal ve son videosu başarıyla eklendi: ${channelTitle}` };
+  const videoCount = videoRes.data.items?.length || 0;
+  return { message: `✅ Kanal ve ${videoCount} videosu başarıyla eklendi: ${channelTitle}` };
 }
 
 module.exports = {

@@ -6,16 +6,22 @@ const authenticate = (req, res, next) => {
   try {
     const authHeader = req.headers.authorization;
 
+    console.log('[AUTH] Path:', req.path, 'Has auth header:', !!authHeader);
+
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      console.log('[AUTH] No bearer token found');
       return res.status(401).json({ error: 'Token bulunamadı. Lütfen giriş yapın.' });
     }
 
     const token = authHeader.substring(7);
     const decoded = jwt.verify(token, JWT_SECRET);
 
+    console.log('[AUTH] Token decoded:', { id: decoded.id, userId: decoded.userId, username: decoded.username });
+
     req.user = decoded;
     next();
   } catch (error) {
+    console.log('[AUTH] Error:', error.message);
     if (error.name === 'TokenExpiredError') {
       return res.status(401).json({ error: 'Token süresi dolmuş. Lütfen tekrar giriş yapın.' });
     }

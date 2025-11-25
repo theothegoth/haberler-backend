@@ -4,7 +4,7 @@ const notificationController = {
   // Get user's notifications
   async getNotifications(req, res) {
     try {
-      const userId = req.user.userId;
+      const userId = req.user?.id || req.user?.userId;
       const { limit = 20, offset = 0 } = req.query;
 
       const notifications = await Notification.getUserNotifications(
@@ -27,7 +27,7 @@ const notificationController = {
   // Get unread notification count
   async getUnreadCount(req, res) {
     try {
-      const userId = req.user.userId;
+      const userId = req.user?.id || req.user?.userId;
       const count = await Notification.getUnreadCount(userId);
       res.json({ count });
     } catch (error) {
@@ -40,7 +40,7 @@ const notificationController = {
   async markAsRead(req, res) {
     try {
       const { id } = req.params;
-      const userId = req.user.userId;
+      const userId = req.user?.id || req.user?.userId;
 
       const notification = await Notification.markAsRead(id, userId);
 
@@ -58,7 +58,7 @@ const notificationController = {
   // Mark all notifications as read
   async markAllAsRead(req, res) {
     try {
-      const userId = req.user.userId;
+      const userId = req.user?.id || req.user?.userId;
       await Notification.markAllAsRead(userId);
       res.json({ message: 'Tüm bildirimler okundu olarak işaretlendi' });
     } catch (error) {
@@ -71,7 +71,7 @@ const notificationController = {
   async deleteNotification(req, res) {
     try {
       const { id } = req.params;
-      const userId = req.user.userId;
+      const userId = req.user?.id || req.user?.userId;
 
       const notification = await Notification.deleteNotification(id, userId);
 

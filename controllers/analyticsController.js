@@ -3,7 +3,7 @@ const pool = require('../config/database');
 // Get author's analytics overview
 exports.getAnalyticsOverview = async (req, res) => {
   try {
-    const userId = req.user.userId;
+    const userId = req.user?.id || req.user?.userId;
 
     // Get total stats
     const statsQuery = `
@@ -69,7 +69,7 @@ exports.getAnalyticsOverview = async (req, res) => {
 // Get article views over time
 exports.getViewsOverTime = async (req, res) => {
   try {
-    const userId = req.user.userId;
+    const userId = req.user?.id || req.user?.userId;
     const { days = 30 } = req.query;
 
     const query = `
@@ -117,7 +117,7 @@ exports.getViewsOverTime = async (req, res) => {
 // Get engagement metrics breakdown
 exports.getEngagementMetrics = async (req, res) => {
   try {
-    const userId = req.user.userId;
+    const userId = req.user?.id || req.user?.userId;
     const { days = 30 } = req.query;
 
     const query = `
@@ -176,7 +176,7 @@ exports.getEngagementMetrics = async (req, res) => {
 // Get follower growth over time
 exports.getFollowerGrowth = async (req, res) => {
   try {
-    const userId = req.user.userId;
+    const userId = req.user?.id || req.user?.userId;
     const { days = 30 } = req.query;
 
     const query = `
@@ -228,7 +228,7 @@ exports.getFollowerGrowth = async (req, res) => {
 // Get popular articles
 exports.getPopularArticles = async (req, res) => {
   try {
-    const userId = req.user.userId;
+    const userId = req.user?.id || req.user?.userId;
     const { limit = 10, sortBy = 'views' } = req.query;
 
     let orderByClause;
@@ -289,7 +289,7 @@ exports.getPopularArticles = async (req, res) => {
 // Get article performance details
 exports.getArticlePerformance = async (req, res) => {
   try {
-    const userId = req.user.userId;
+    const userId = req.user?.id || req.user?.userId;
     const { newsId } = req.params;
 
     // Verify article belongs to user
@@ -374,7 +374,7 @@ exports.getArticlePerformance = async (req, res) => {
 // Get top categories by performance
 exports.getTopCategories = async (req, res) => {
   try {
-    const userId = req.user.userId;
+    const userId = req.user?.id || req.user?.userId;
 
     const query = `
       SELECT

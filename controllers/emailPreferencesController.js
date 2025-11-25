@@ -3,7 +3,13 @@ const pool = require('../config/database');
 // Get user's email preferences
 const getEmailPreferences = async (req, res) => {
   try {
-    const userId = req.user.id;
+    // Support both old tokens (userId) and new tokens (id) for backward compatibility
+    const userId = req.user?.id || req.user?.userId;
+
+    if (!userId) {
+      console.error('User ID not found in request');
+      return res.status(401).json({ error: 'Authentication required' });
+    }
 
     const result = await pool.query(
       'SELECT weekly_digest, new_follower, new_comment, new_like, updated_at FROM email_preferences WHERE user_id = $1',
@@ -31,7 +37,14 @@ const getEmailPreferences = async (req, res) => {
 // Update user's email preferences
 const updateEmailPreferences = async (req, res) => {
   try {
-    const userId = req.user.id;
+    // Support both old tokens (userId) and new tokens (id) for backward compatibility
+    const userId = req.user?.id || req.user?.userId;
+
+    if (!userId) {
+      console.error('User ID not found in request');
+      return res.status(401).json({ error: 'Authentication required' });
+    }
+
     const { weekly_digest, new_follower, new_comment, new_like } = req.body;
 
     // Validate boolean values

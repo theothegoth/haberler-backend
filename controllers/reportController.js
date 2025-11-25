@@ -12,7 +12,7 @@ const createReport = async (req, res) => {
     }
 
     const { reportedType, reportedId, reason, description } = req.body;
-    const reporterId = req.user.userId;
+    const reporterId = req.user?.id || req.user?.userId;
 
     // Verify the reported content exists
     const content = await Report.getReportedContent(reportedType, reportedId);
@@ -103,7 +103,7 @@ const updateReportStatus = async (req, res) => {
 
     const { reportId } = req.params;
     const { status, adminNotes } = req.body;
-    const reviewedBy = req.user.userId;
+    const reviewedBy = req.user?.id || req.user?.userId;
 
     const updatedReport = await Report.updateStatus(reportId, status, reviewedBy, adminNotes);
 

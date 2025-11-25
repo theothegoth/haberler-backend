@@ -1,12 +1,12 @@
 const pool = require('../config/database');
 
 class UserNews {
-  static async create({ userId, title, content, category, imageUrl, tags }) {
+  static async create({ userId, title, content, category, tags }) {
     const result = await pool.query(
-      `INSERT INTO user_news (user_id, title, content, category, image_url, tags, created_at, updated_at)
-       VALUES ($1, $2, $3, $4, $5, $6, NOW(), NOW())
+      `INSERT INTO user_news (user_id, title, content, category, tags, created_at, updated_at)
+       VALUES ($1, $2, $3, $4, $5, NOW(), NOW())
        RETURNING *`,
-      [userId, title, content, category, imageUrl, tags]
+      [userId, title, content, category, tags]
     );
     return result.rows[0];
   }
@@ -14,6 +14,11 @@ class UserNews {
   static async findById(newsId, userId = null) {
     const result = await pool.query(
       `SELECT un.*, u.username, u.bio as user_bio, u.profile_picture as user_profile_picture, u.email,
+              (SELECT image_url FROM article_images WHERE article_id = un.id ORDER BY display_order ASC LIMIT 1) as image_url,
+              COALESCE(
+                (SELECT image_url FROM article_images WHERE article_id = un.id ORDER BY display_order ASC LIMIT 1),
+                (SELECT vc.thumbnail FROM article_videos av JOIN videos_cache vc ON av.video_id = vc.video_id WHERE av.article_id = un.id ORDER BY av.created_at ASC LIMIT 1)
+              ) as display_thumbnail,
               (SELECT COUNT(*)::int FROM news_likes WHERE news_id = un.id) as like_count,
               (SELECT COUNT(*)::int FROM comments WHERE news_id = un.id) as comment_count,
               EXISTS(SELECT 1 FROM news_likes WHERE news_id = un.id AND user_id = $2) as user_has_liked
@@ -28,8 +33,14 @@ class UserNews {
   static async findByUserId(userId, limit = 20, offset = 0) {
     const result = await pool.query(
       `SELECT un.*, u.username, u.bio as user_bio, u.profile_picture as user_profile_picture,
+              (SELECT image_url FROM article_images WHERE article_id = un.id ORDER BY display_order ASC LIMIT 1) as image_url,
+              COALESCE(
+                (SELECT image_url FROM article_images WHERE article_id = un.id ORDER BY display_order ASC LIMIT 1),
+                (SELECT vc.thumbnail FROM article_videos av JOIN videos_cache vc ON av.video_id = vc.video_id WHERE av.article_id = un.id ORDER BY av.created_at ASC LIMIT 1)
+              ) as display_thumbnail,
               (SELECT COUNT(*)::int FROM news_likes WHERE news_id = un.id) as like_count,
-              (SELECT COUNT(*)::int FROM comments WHERE news_id = un.id) as comment_count
+              (SELECT COUNT(*)::int FROM comments WHERE news_id = un.id) as comment_count,
+              (SELECT COUNT(*)::int FROM article_videos WHERE article_id = un.id) as video_count
        FROM user_news un
        JOIN users u ON un.user_id = u.id
        WHERE un.user_id = $1
@@ -45,9 +56,15 @@ class UserNews {
     // Exclude posts from blocked users
     const result = await pool.query(
       `SELECT un.*, u.username, u.bio as user_bio, u.profile_picture as user_profile_picture,
+              (SELECT image_url FROM article_images WHERE article_id = un.id ORDER BY display_order ASC LIMIT 1) as image_url,
+              COALESCE(
+                (SELECT image_url FROM article_images WHERE article_id = un.id ORDER BY display_order ASC LIMIT 1),
+                (SELECT vc.thumbnail FROM article_videos av JOIN videos_cache vc ON av.video_id = vc.video_id WHERE av.article_id = un.id ORDER BY av.created_at ASC LIMIT 1)
+              ) as display_thumbnail,
               (SELECT COUNT(*)::int FROM news_likes WHERE news_id = un.id) as like_count,
               (SELECT COUNT(*)::int FROM comments WHERE news_id = un.id) as comment_count,
-              (SELECT COUNT(*)::int > 0 FROM news_likes WHERE news_id = un.id AND user_id = $1) as user_has_liked
+              (SELECT COUNT(*)::int > 0 FROM news_likes WHERE news_id = un.id AND user_id = $1) as user_has_liked,
+              (SELECT COUNT(*)::int FROM article_videos WHERE article_id = un.id) as video_count
        FROM user_news un
        JOIN users u ON un.user_id = u.id
        WHERE (un.user_id = $1
@@ -67,6 +84,11 @@ class UserNews {
   static async getAllPublic(limit = 20, offset = 0) {
     const result = await pool.query(
       `SELECT un.*, u.username, u.bio as user_bio, u.profile_picture as user_profile_picture,
+              (SELECT image_url FROM article_images WHERE article_id = un.id ORDER BY display_order ASC LIMIT 1) as image_url,
+              COALESCE(
+                (SELECT image_url FROM article_images WHERE article_id = un.id ORDER BY display_order ASC LIMIT 1),
+                (SELECT vc.thumbnail FROM article_videos av JOIN videos_cache vc ON av.video_id = vc.video_id WHERE av.article_id = un.id ORDER BY av.created_at ASC LIMIT 1)
+              ) as display_thumbnail,
               (SELECT COUNT(*)::int FROM news_likes WHERE news_id = un.id) as like_count,
               (SELECT COUNT(*)::int FROM comments WHERE news_id = un.id) as comment_count
        FROM user_news un
@@ -78,13 +100,13 @@ class UserNews {
     return result.rows;
   }
 
-  static async update(newsId, userId, { title, content, category, imageUrl, tags }) {
+  static async update(newsId, userId, { title, content, category, tags }) {
     const result = await pool.query(
       `UPDATE user_news
-       SET title = $1, content = $2, category = $3, image_url = $4, tags = $5, updated_at = NOW()
-       WHERE id = $6 AND user_id = $7
+       SET title = $1, content = $2, category = $3, tags = $4, updated_at = NOW()
+       WHERE id = $5 AND user_id = $6
        RETURNING *`,
-      [title, content, category, imageUrl, tags, newsId, userId]
+      [title, content, category, tags, newsId, userId]
     );
     return result.rows[0];
   }
@@ -185,11 +207,17 @@ class UserNews {
     params.push(limit, offset);
 
     const sql = `
-      SELECT 
+      SELECT
         un.*,
         u.username,
         (SELECT COUNT(*)::int FROM news_likes WHERE news_id = un.id) as like_count,
-        (SELECT COUNT(*)::int FROM news_comments WHERE news_id = un.id) as comment_count
+        (SELECT COUNT(*)::int FROM news_comments WHERE news_id = un.id) as comment_count,
+        (SELECT COUNT(*)::int FROM article_videos WHERE article_id = un.id) as video_count,
+        (SELECT image_url FROM article_images WHERE article_id = un.id ORDER BY display_order ASC LIMIT 1) as image_url,
+        COALESCE(
+          (SELECT image_url FROM article_images WHERE article_id = un.id ORDER BY display_order ASC LIMIT 1),
+          (SELECT vc.thumbnail FROM article_videos av JOIN videos_cache vc ON av.video_id = vc.video_id WHERE av.article_id = un.id ORDER BY av.created_at ASC LIMIT 1)
+        ) as display_thumbnail
       FROM user_news un
       JOIN users u ON un.user_id = u.id
       ${whereClause}

@@ -42,10 +42,16 @@ class Bookmark {
   static async getSavedArticles(userId, limit = 20, offset = 0) {
     const result = await pool.query(
       `SELECT
-        un.id, un.title, un.content, un.image_url, un.category, un.created_at,
+        un.id, un.title, un.content, un.category, un.created_at, un.updated_at,
+        (SELECT image_url FROM article_images WHERE article_id = un.id ORDER BY display_order ASC LIMIT 1) as image_url,
+        COALESCE(
+          (SELECT image_url FROM article_images WHERE article_id = un.id ORDER BY display_order ASC LIMIT 1),
+          (SELECT vc.thumbnail FROM article_videos av JOIN videos_cache vc ON av.video_id = vc.video_id WHERE av.article_id = un.id ORDER BY av.created_at ASC LIMIT 1)
+        ) as display_thumbnail,
         u.id as user_id, u.username, u.email,
         (SELECT COUNT(*) FROM news_likes WHERE news_id = un.id) as like_count,
         (SELECT COUNT(*) FROM comments WHERE news_id = un.id) as comment_count,
+        (SELECT COUNT(*)::int FROM article_videos WHERE article_id = un.id) as video_count,
         EXISTS(SELECT 1 FROM news_likes WHERE news_id = un.id AND user_id = $1) as user_has_liked,
         sa.created_at as saved_at
        FROM saved_articles sa

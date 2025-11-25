@@ -43,6 +43,10 @@ const reportRoutes = require('./routes/reportRoutes');
 const analyticsRoutes = require('./routes/analytics');
 const recommendationRoutes = require('./routes/recommendationRoutes');
 const emailPreferencesRoutes = require('./routes/emailPreferencesRoutes');
+const testEmailRoutes = require('./routes/testEmailRoutes');
+const articleImageRoutes = require('./routes/articleImageRoutes');
+const articleVideoRoutes = require('./routes/articleVideoRoutes');
+const adminRoutes = require('./routes/adminRoutes');
 const YouTubeService = require('./services/youtubeServiceNew');
 const { scheduleWeeklyDigest } = require('./jobs/weeklyDigest');
 
@@ -146,10 +150,12 @@ app.use('/api/bookmarks', apiLimiter, bookmarkRoutes);
 app.use('/api/analytics', apiLimiter, analyticsRoutes);
 app.use('/api/recommendations', apiLimiter, recommendationRoutes);
 app.use('/api/email-preferences', apiLimiter, emailPreferencesRoutes);
+app.use('/api/articles', uploadLimiter, articleImageRoutes);
+app.use('/api/articles', apiLimiter, articleVideoRoutes);
+app.use('/api/admin', apiLimiter, adminRoutes);
 
 // Test email routes (only in development)
 if (process.env.NODE_ENV !== 'production') {
-  const testEmailRoutes = require('./routes/testEmailRoutes');
   app.use('/api/test-emails', apiLimiter, testEmailRoutes);
   logger.info('Test email routes enabled (development mode)');
 }

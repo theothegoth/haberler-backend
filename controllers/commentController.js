@@ -19,7 +19,7 @@ const createComment = async (req, res) => {
 
     const { newsId } = req.params;
     const { content, parentId } = req.body;
-    const userId = req.user.userId;
+    const userId = req.user?.id || req.user?.userId;
 
     const comment = await Comment.create(newsId, userId, content, parentId);
 
@@ -120,7 +120,7 @@ const createComment = async (req, res) => {
 const getComments = async (req, res) => {
   try {
     const { newsId } = req.params;
-    const userId = req.user?.userId || null; // Get userId if authenticated, null otherwise
+    const userId = req.user ? (req.user.id || req.user.userId) : null; // Get userId if authenticated, null otherwise
 
     console.log('[BACKEND GET COMMENTS] NewsId:', newsId, 'UserId:', userId);
 
@@ -146,7 +146,7 @@ const getComments = async (req, res) => {
 const deleteComment = async (req, res) => {
   try {
     const { commentId } = req.params;
-    const userId = req.user.userId;
+    const userId = req.user?.id || req.user?.userId;
 
     const deletedComment = await Comment.delete(commentId, userId);
 
@@ -171,7 +171,7 @@ const deleteComment = async (req, res) => {
 const likeComment = async (req, res) => {
   try {
     const { commentId } = req.params;
-    const userId = req.user.userId;
+    const userId = req.user?.id || req.user?.userId;
 
     console.log('[BACKEND LIKE] User:', userId, 'attempting to LIKE comment:', commentId);
 
@@ -193,7 +193,7 @@ const likeComment = async (req, res) => {
 const unlikeComment = async (req, res) => {
   try {
     const { commentId } = req.params;
-    const userId = req.user.userId;
+    const userId = req.user?.id || req.user?.userId;
 
     console.log('[BACKEND UNLIKE] User:', userId, 'attempting to UNLIKE comment:', commentId);
 

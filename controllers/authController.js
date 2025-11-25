@@ -6,7 +6,7 @@ const { generateVerificationToken, sendVerificationEmail, sendPasswordResetEmail
 
 const generateToken = (user) => {
   return jwt.sign(
-    { userId: user.id, email: user.email, username: user.username },
+    { id: user.id, email: user.email, username: user.username },
     JWT_SECRET,
     { expiresIn: '7d' }
   );
@@ -93,6 +93,15 @@ const login = async (req, res) => {
       return res.status(401).json({ error: 'Email veya şifre hatalı.' });
     }
 
+    // Check if user is banned
+    if (user.is_banned) {
+      return res.status(403).json({
+        error: 'Your account has been banned. Please contact support for more information.',
+        banned: true,
+        banReason: user.ban_reason
+      });
+    }
+
     // Check if email is verified (warning, but allow login)
     const emailVerified = user.email_verified || false;
 
@@ -106,7 +115,8 @@ const login = async (req, res) => {
         email: user.email,
         username: user.username,
         countryCode: user.country_code,
-        emailVerified: emailVerified
+        emailVerified: emailVerified,
+        role: user.role || 'user'
       },
       requiresVerification: !emailVerified
     });
@@ -118,7 +128,7 @@ const login = async (req, res) => {
 
 const getProfile = async (req, res) => {
   try {
-    const user = await User.findById(req.user.userId);
+    const user = await User.findById(req.user?.id || req.user?.userId);
     if (!user) {
       return res.status(404).json({ error: 'Kullanıcı bulunamadı.' });
     }
@@ -173,7 +183,7 @@ const registerValidation = [
 
 const updateProfile = async (req, res) => {
   try {
-    const userId = req.user.userId;
+    const userId = req.user?.id || req.user?.userId;
     const { username, email, bio } = req.body;
 
     // Check if username is taken by another user
@@ -214,7 +224,7 @@ const updateProfile = async (req, res) => {
 
 const changePassword = async (req, res) => {
   try {
-    const userId = req.user.userId;
+    const userId = req.user?.id || req.user?.userId;
     const { currentPassword, newPassword } = req.body;
 
     if (newPassword.length < 6) {
@@ -258,7 +268,7 @@ const changePasswordValidation = [
 
 const uploadProfilePicture = async (req, res) => {
   try {
-    const userId = req.user.userId;
+    const userId = req.user?.id || req.user?.userId;
 
     if (!req.file) {
       return res.status(400).json({ error: 'Lütfen bir resim dosyası seçin.' });

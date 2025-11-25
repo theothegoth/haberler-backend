@@ -5,6 +5,7 @@ const { authenticate, optionalAuthenticate } = require('../middleware/auth');
 const articleImageUpload = require('../config/articleImageUpload');
 const { cacheMiddleware, cacheKeys } = require('../middleware/cacheMiddleware');
 const { uploadLimiter, createLimiter } = require('../middleware/rateLimiter');
+const { articleValidation, checkMediaRequirement } = require('../middleware/contentValidation');
 
 // Image upload endpoint
 router.post('/upload-image', authenticate, uploadLimiter, articleImageUpload.single('image'), (req, res) => {
@@ -26,7 +27,7 @@ router.post('/upload-image', authenticate, uploadLimiter, articleImageUpload.sin
 });
 
 // Protected routes (require authentication) - put these first to avoid conflicts
-router.post('/', authenticate, createLimiter, newsController.createNews);
+router.post('/', authenticate, createLimiter, articleValidation, newsController.createNews);
 router.get('/feed/my-feed', authenticate, cacheMiddleware(300, cacheKeys.newsFeed), newsController.getNewsFeed); // Cache 5 min
 router.get('/my/articles', authenticate, cacheMiddleware(300, cacheKeys.userArticles), newsController.getMyNews); // Cache 5 min
 
@@ -35,7 +36,7 @@ router.get('/search', cacheMiddleware(600, cacheKeys.explore), newsController.se
 router.get('/all', cacheMiddleware(300), newsController.getAllNews); // Cache 5 min
 router.get('/user/:userId', cacheMiddleware(300, cacheKeys.userArticles), newsController.getUserNews); // Cache 5 min
 router.get('/:id', optionalAuthenticate, cacheMiddleware(600, cacheKeys.articleDetail), newsController.getNews); // Cache 10 min
-router.put('/:id', authenticate, newsController.updateNews);
+router.put('/:id', authenticate, articleValidation, checkMediaRequirement, newsController.updateNews);
 router.delete('/:id', authenticate, newsController.deleteNews);
 router.post('/:id/like', authenticate, newsController.likeNews);
 router.delete('/:id/like', authenticate, newsController.unlikeNews);

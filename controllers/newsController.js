@@ -13,18 +13,18 @@ const newsController = {
     try {
       const errors = validationResult(req);
       if (!errors.isEmpty()) {
-        return res.status(400).json({ errors: errors.array() });
+        const firstError = errors.array()[0];
+        return res.status(400).json({ error: firstError.msg });
       }
 
-      const { title, content, category, imageUrl, tags } = req.body;
-      const userId = req.user.userId;
+      const { title, content, category, tags } = req.body;
+      const userId = req.user?.id || req.user?.userId;
 
       const news = await UserNews.create({
         userId,
         title,
         content,
         category,
-        imageUrl,
         tags: tags || []
       });
 
@@ -56,7 +56,7 @@ const newsController = {
   // Get a single news article
   async getNews(req, res) {
     try {
-      const userId = req.user ? req.user.userId : null;
+      const userId = req.user ? (req.user.id || req.user.userId) : null;
       const { id } = req.params;
       const news = await UserNews.findById(id, userId);
 
@@ -81,7 +81,7 @@ const newsController = {
   // Get user's own news articles
   async getMyNews(req, res) {
     try {
-      const userId = req.user.userId;
+      const userId = req.user?.id || req.user?.userId;
       const { limit = 20, offset = 0 } = req.query;
 
       const news = await UserNews.findByUserId(userId, parseInt(limit), parseInt(offset));
@@ -109,7 +109,7 @@ const newsController = {
   // Get news feed (from followed users)
   async getNewsFeed(req, res) {
     try {
-      const userId = req.user.userId;
+      const userId = req.user?.id || req.user?.userId;
       const { limit = 20, offset = 0 } = req.query;
 
       const news = await UserNews.getNewsFeed(userId, parseInt(limit), parseInt(offset));
@@ -137,18 +137,18 @@ const newsController = {
     try {
       const errors = validationResult(req);
       if (!errors.isEmpty()) {
-        return res.status(400).json({ errors: errors.array() });
+        const firstError = errors.array()[0];
+        return res.status(400).json({ error: firstError.msg });
       }
 
       const { id } = req.params;
-      const { title, content, category, imageUrl, tags } = req.body;
-      const userId = req.user.userId;
+      const { title, content, category, tags } = req.body;
+      const userId = req.user?.id || req.user?.userId;
 
       const news = await UserNews.update(id, userId, {
         title,
         content,
         category,
-        imageUrl,
         tags: tags || []
       });
 
@@ -172,7 +172,7 @@ const newsController = {
   async deleteNews(req, res) {
     try {
       const { id } = req.params;
-      const userId = req.user.userId;
+      const userId = req.user?.id || req.user?.userId;
 
       const news = await UserNews.delete(id, userId);
 
@@ -197,7 +197,7 @@ const newsController = {
   async likeNews(req, res) {
     try {
       const { id } = req.params;
-      const userId = req.user.userId;
+      const userId = req.user?.id || req.user?.userId;
 
       // Get the news article to find the owner
       const news = await UserNews.findById(id, userId);
@@ -259,7 +259,7 @@ const newsController = {
   async unlikeNews(req, res) {
     try {
       const { id } = req.params;
-      const userId = req.user.userId;
+      const userId = req.user?.id || req.user?.userId;
 
       const success = await UserNews.unlikeNews(id, userId);
 

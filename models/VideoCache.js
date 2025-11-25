@@ -119,6 +119,7 @@ class VideoCache {
     const result = await pool.query(
       `DELETE FROM videos_cache
        WHERE published_at < NOW() - INTERVAL '${hoursThreshold} hours'
+       AND video_id NOT IN (SELECT DISTINCT video_id FROM article_videos)
        RETURNING *`
     );
     return result.rows;

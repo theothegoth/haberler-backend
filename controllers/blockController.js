@@ -3,7 +3,7 @@ const BlockedUser = require('../models/BlockedUser');
 const blockUser = async (req, res) => {
   try {
     const { userId } = req.params;
-    const blockerId = req.user.userId;
+    const blockerId = req.user?.id || req.user?.userId;
 
     // Prevent blocking yourself
     if (parseInt(userId) === blockerId) {
@@ -29,7 +29,7 @@ const blockUser = async (req, res) => {
 const unblockUser = async (req, res) => {
   try {
     const { userId } = req.params;
-    const blockerId = req.user.userId;
+    const blockerId = req.user?.id || req.user?.userId;
 
     const success = await BlockedUser.unblock(blockerId, userId);
 
@@ -46,7 +46,7 @@ const unblockUser = async (req, res) => {
 
 const getBlockedUsers = async (req, res) => {
   try {
-    const userId = req.user.userId;
+    const userId = req.user?.id || req.user?.userId;
 
     const blockedUsers = await BlockedUser.getBlockedUsers(userId);
 
@@ -60,7 +60,7 @@ const getBlockedUsers = async (req, res) => {
 const checkIfBlocked = async (req, res) => {
   try {
     const { userId } = req.params;
-    const blockerId = req.user.userId;
+    const blockerId = req.user?.id || req.user?.userId;
 
     const isBlocked = await BlockedUser.isBlocked(blockerId, userId);
 

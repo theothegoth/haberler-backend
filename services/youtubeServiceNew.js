@@ -4,6 +4,43 @@ const VideoCache = require('../models/VideoCache');
 const RSSService = require('./rssService');
 
 class YouTubeService {
+  /**
+   * Get the best available thumbnail URL from YouTube API response
+   * Priority: maxres > high > standard > medium > default
+   * @param {object} thumbnails - thumbnails object from YouTube API
+   * @param {string} fallbackUrl - fallback URL if no thumbnails found
+   * @returns {string} Best available thumbnail URL
+   */
+  static getBestThumbnail(thumbnails, fallbackUrl = null) {
+    if (!thumbnails) return fallbackUrl;
+
+    // Try maxres first (1280x720 or higher) - best quality
+    if (thumbnails.maxres?.url) {
+      return thumbnails.maxres.url;
+    }
+
+    // Fall back to high quality (480x360)
+    if (thumbnails.high?.url) {
+      return thumbnails.high.url;
+    }
+
+    // Fall back to standard (640x480)
+    if (thumbnails.standard?.url) {
+      return thumbnails.standard.url;
+    }
+
+    // Fall back to medium (320x180)
+    if (thumbnails.medium?.url) {
+      return thumbnails.medium.url;
+    }
+
+    // Last resort: default (120x90)
+    if (thumbnails.default?.url) {
+      return thumbnails.default.url;
+    }
+
+    return fallbackUrl;
+  }
   static async updateUserVideos(userId) {
     const apiKey = process.env.YOUTUBE_API_KEY;
 
@@ -66,7 +103,7 @@ class YouTubeService {
               channelId: item.snippet.channelId,
               channelTitle: item.snippet.channelTitle,
               title: item.snippet.title,
-              thumbnail: item.snippet.thumbnails?.medium?.url || rssVideoData[item.id]?.thumbnail,
+              thumbnail: YouTubeService.getBestThumbnail(item.snippet.thumbnails, rssVideoData[item.id]?.thumbnail),
               publishedAt: item.snippet.publishedAt,
               likeCount: parseInt(item.statistics?.likeCount) || 0,
               categoryId: item.snippet?.categoryId || null
@@ -203,7 +240,7 @@ class YouTubeService {
           channelId,
           channelTitle,
           title: item.snippet.title,
-          thumbnail: item.snippet.thumbnails?.medium?.url,
+          thumbnail: YouTubeService.getBestThumbnail(item.snippet.thumbnails),
           publishedAt: item.snippet.publishedAt,
           likeCount: parseInt(item.statistics?.likeCount) || 0,
           categoryId: item.snippet?.categoryId || null
@@ -228,6 +265,72 @@ class YouTubeService {
     const deleted = await VideoCache.cleanOldVideos(48);
     console.log(`🗑️ ${deleted.length} eski video silindi.`);
     return { message: `${deleted.length} eski video silindi.` };
+  }
+
+  /**
+   * Fetch and cache a single video by video ID
+   * Used when users want to add any YouTube video to their article
+   * @param {string} videoId - YouTube video ID
+   * @returns {Promise<object>} Video data
+   */
+  static async fetchAndCacheVideo(videoId) {
+    const apiKey = process.env.YOUTUBE_API_KEY;
+
+    // Check if video already exists in cache
+    const existingVideo = await VideoCache.exists(videoId);
+    if (existingVideo) {
+      console.log(`[FETCH_VIDEO] Video ${videoId} already in cache`);
+      return { message: 'Video already cached', cached: true };
+    }
+
+    try {
+      console.log(`[FETCH_VIDEO] Fetching metadata for video: ${videoId}`);
+
+      // Fetch video details from YouTube API
+      const response = await axios.get('https://youtube.googleapis.com/youtube/v3/videos', {
+        params: {
+          part: 'statistics,snippet',
+          id: videoId,
+          key: apiKey
+        }
+      });
+
+      if (!response.data.items || response.data.items.length === 0) {
+        throw new Error('Video not found or unavailable');
+      }
+
+      const item = response.data.items[0];
+
+      // Prepare video data
+      const videoData = {
+        videoId: item.id,
+        channelId: item.snippet.channelId,
+        channelTitle: item.snippet.channelTitle,
+        title: item.snippet.title,
+        thumbnail: YouTubeService.getBestThumbnail(item.snippet.thumbnails),
+        publishedAt: item.snippet.publishedAt,
+        likeCount: parseInt(item.statistics?.likeCount) || 0,
+        categoryId: item.snippet?.categoryId || null
+      };
+
+      // Add to cache
+      await VideoCache.addBatch([videoData]);
+
+      console.log(`[FETCH_VIDEO] Successfully cached video: ${videoData.title}`);
+
+      return {
+        message: 'Video fetched and cached successfully',
+        cached: false,
+        video: videoData
+      };
+
+    } catch (error) {
+      console.error('[FETCH_VIDEO] Error:', error.message);
+      if (error.response?.status === 403) {
+        throw new Error('YouTube API quota exceeded or invalid API key');
+      }
+      throw new Error(error.message || 'Failed to fetch video metadata');
+    }
   }
 }
 

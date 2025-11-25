@@ -4,7 +4,7 @@ const Bookmark = require('../models/Bookmark');
 const saveArticle = async (req, res) => {
   try {
     const { newsId } = req.params;
-    const userId = req.user.userId;
+    const userId = req.user?.id || req.user?.userId;
 
     const bookmark = await Bookmark.save(userId, newsId);
 
@@ -26,7 +26,7 @@ const saveArticle = async (req, res) => {
 const unsaveArticle = async (req, res) => {
   try {
     const { newsId } = req.params;
-    const userId = req.user.userId;
+    const userId = req.user?.id || req.user?.userId;
 
     const deletedBookmark = await Bookmark.unsave(userId, newsId);
 
@@ -45,7 +45,7 @@ const unsaveArticle = async (req, res) => {
 const checkSaved = async (req, res) => {
   try {
     const { newsId } = req.params;
-    const userId = req.user.userId;
+    const userId = req.user?.id || req.user?.userId;
 
     const isSaved = await Bookmark.isSaved(userId, newsId);
 
@@ -59,7 +59,7 @@ const checkSaved = async (req, res) => {
 // Get user's saved articles
 const getSavedArticles = async (req, res) => {
   try {
-    const userId = req.user.userId;
+    const userId = req.user?.id || req.user?.userId;
     const limit = parseInt(req.query.limit) || 20;
     const offset = parseInt(req.query.offset) || 0;
 

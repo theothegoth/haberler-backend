@@ -1,12 +1,12 @@
 const pool = require('../config/database');
 
 class UserNews {
-  static async create({ userId, title, content, category, tags }) {
+  static async create({ userId, title, content, category, tags, articleType = 'news' }) {
     const result = await pool.query(
-      `INSERT INTO user_news (user_id, title, content, category, tags, created_at, updated_at)
-       VALUES ($1, $2, $3, $4, $5, NOW(), NOW())
+      `INSERT INTO user_news (user_id, title, content, category, tags, article_type, created_at, updated_at)
+       VALUES ($1, $2, $3, $4, $5, $6, NOW(), NOW())
        RETURNING *`,
-      [userId, title, content, category, tags]
+      [userId, title, content, category, tags, articleType]
     );
     return result.rows[0];
   }
@@ -100,13 +100,13 @@ class UserNews {
     return result.rows;
   }
 
-  static async update(newsId, userId, { title, content, category, tags }) {
+  static async update(newsId, userId, { title, content, category, tags, articleType }) {
     const result = await pool.query(
       `UPDATE user_news
-       SET title = $1, content = $2, category = $3, tags = $4, updated_at = NOW()
-       WHERE id = $5 AND user_id = $6
+       SET title = $1, content = $2, category = $3, tags = $4, article_type = $5, updated_at = NOW()
+       WHERE id = $6 AND user_id = $7
        RETURNING *`,
-      [title, content, category, tags, newsId, userId]
+      [title, content, category, tags, articleType, newsId, userId]
     );
     return result.rows[0];
   }
@@ -142,7 +142,7 @@ class UserNews {
     return result.rowCount > 0;
   }
 
-  static async advancedSearch({ query, categories, author, tags, startDate, endDate, sortBy, limit, offset }) {
+  static async advancedSearch({ query, categories, author, tags, articleType, startDate, endDate, sortBy, limit, offset }) {
     let conditions = [];
     let params = [];
     let paramIndex = 1;
@@ -158,6 +158,12 @@ class UserNews {
       conditions.push(`un.category IN (${categoryPlaceholders})`);
       params.push(...categories);
       paramIndex += categories.length;
+    }
+
+    if (articleType && articleType !== 'all') {
+      conditions.push(`un.article_type = \$${paramIndex}`);
+      params.push(articleType);
+      paramIndex++;
     }
 
     if (author) {

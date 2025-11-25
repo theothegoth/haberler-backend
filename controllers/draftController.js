@@ -12,7 +12,7 @@ const draftController = {
         return res.status(400).json({ error: firstError.msg });
       }
 
-      const { title, content, category, tags } = req.body;
+      const { title, content, category, tags, articleType } = req.body;
       const userId = req.user?.id || req.user?.userId;
 
       const draft = await Draft.create({
@@ -20,7 +20,8 @@ const draftController = {
         title,
         content,
         category,
-        tags: tags || []
+        tags: tags || [],
+        articleType: articleType || 'news'
       });
 
       res.status(201).json({
@@ -45,7 +46,7 @@ const draftController = {
         return res.status(400).json({ error: firstError.msg });
       }
 
-      const { title, content, category, tags } = req.body;
+      const { title, content, category, tags, articleType } = req.body;
       const { id } = req.params;
       const userId = req.user?.id || req.user?.userId;
 
@@ -57,7 +58,8 @@ const draftController = {
         title,
         content,
         category,
-        tags: tags || []
+        tags: tags || [],
+        articleType
       });
 
       console.log('[DRAFT_UPDATE] Update successful for draft:', draft.id, 'Owner:', draft.user_id);

@@ -4,7 +4,7 @@ const MAX_DRAFTS_PER_USER = 3;
 
 class Draft {
   // Create a new draft
-  static async create({ userId, title, content, category, tags }) {
+  static async create({ userId, title, content, category, tags, articleType }) {
     // Check if user has reached the maximum number of drafts
     const countResult = await pool.query(
       'SELECT COUNT(*) FROM drafts WHERE user_id = $1',
@@ -19,22 +19,22 @@ class Draft {
 
     // Create new draft
     const result = await pool.query(
-      `INSERT INTO drafts (user_id, title, content, category, tags)
-       VALUES ($1, $2, $3, $4, $5)
+      `INSERT INTO drafts (user_id, title, content, category, tags, article_type)
+       VALUES ($1, $2, $3, $4, $5, $6)
        RETURNING *`,
-      [userId, title || '', content || '', category || '', tags || []]
+      [userId, title || '', content || '', category || '', tags || [], articleType || 'news']
     );
     return result.rows[0];
   }
 
   // Update an existing draft
-  static async update({ draftId, userId, title, content, category, tags }) {
+  static async update({ draftId, userId, title, content, category, tags, articleType }) {
     const result = await pool.query(
       `UPDATE drafts
-       SET title = $1, content = $2, category = $3, tags = $4, updated_at = CURRENT_TIMESTAMP
-       WHERE id = $5 AND user_id = $6
+       SET title = $1, content = $2, category = $3, tags = $4, article_type = $5, updated_at = CURRENT_TIMESTAMP
+       WHERE id = $6 AND user_id = $7
        RETURNING *`,
-      [title || '', content || '', category || '', tags || [], draftId, userId]
+      [title || '', content || '', category || '', tags || [], articleType || 'news', draftId, userId]
     );
 
     if (result.rows.length === 0) {
@@ -98,10 +98,10 @@ class Draft {
 
       // Create news article
       const newsResult = await client.query(
-        `INSERT INTO user_news (user_id, title, content, category, tags)
-         VALUES ($1, $2, $3, $4, $5)
+        `INSERT INTO user_news (user_id, title, content, category, tags, article_type)
+         VALUES ($1, $2, $3, $4, $5, $6)
          RETURNING *`,
-        [userId, draft.title, draft.content, draft.category, draft.tags]
+        [userId, draft.title, draft.content, draft.category, draft.tags, draft.article_type || 'news']
       );
 
       const newArticleId = newsResult.rows[0].id;

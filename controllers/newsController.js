@@ -17,7 +17,7 @@ const newsController = {
         return res.status(400).json({ error: firstError.msg });
       }
 
-      const { title, content, category, tags } = req.body;
+      const { title, content, category, tags, articleType } = req.body;
       const userId = req.user?.id || req.user?.userId;
 
       const news = await UserNews.create({
@@ -25,7 +25,8 @@ const newsController = {
         title,
         content,
         category,
-        tags: tags || []
+        tags: tags || [],
+        articleType: articleType || 'news'
       });
 
       // Get follower IDs to notify them
@@ -142,14 +143,15 @@ const newsController = {
       }
 
       const { id } = req.params;
-      const { title, content, category, tags } = req.body;
+      const { title, content, category, tags, articleType } = req.body;
       const userId = req.user?.id || req.user?.userId;
 
       const news = await UserNews.update(id, userId, {
         title,
         content,
         category,
-        tags: tags || []
+        tags: tags || [],
+        articleType
       });
 
       if (!news) {
@@ -280,6 +282,7 @@ const newsController = {
       const {
         q,              // search query
         category,       // single or multiple categories (comma-separated)
+        articleType,    // article type (news, opinion, analysis, interview, editorial, all)
         author,         // author username
         tags,           // tags (comma-separated)
         startDate,      // date range start
@@ -292,6 +295,7 @@ const newsController = {
       const news = await UserNews.advancedSearch({
         query: q,
         categories: category ? category.split(',') : null,
+        articleType,
         author,
         tags: tags ? tags.split(',') : null,
         startDate,

@@ -42,7 +42,7 @@ class Bookmark {
   static async getSavedArticles(userId, limit = 20, offset = 0) {
     const result = await pool.query(
       `SELECT
-        un.id, un.title, un.content, un.category, un.created_at, un.updated_at,
+        un.id, un.title, un.content, un.category, un.article_type, un.created_at, un.updated_at,
         (SELECT image_url FROM article_images WHERE article_id = un.id ORDER BY display_order ASC LIMIT 1) as image_url,
         COALESCE(
           (SELECT image_url FROM article_images WHERE article_id = un.id ORDER BY display_order ASC LIMIT 1),

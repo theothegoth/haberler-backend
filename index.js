@@ -58,24 +58,27 @@ const app = express();
 const port = process.env.PORT || 5000;
 
 // Serve uploaded files with explicit route handler to bypass all middleware
-app.get('/uploads/:folder/:filename', (req, res) => {
-  // Set CORS headers explicitly
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET');
-  res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
-  res.setHeader('Cross-Origin-Embedder-Policy', 'unsafe-none');
+// Only enable in development or if strictly needed. In production, files should be served from Cloudinary/S3/CDN.
+if (process.env.NODE_ENV !== 'production') {
+  app.get('/uploads/:folder/:filename', (req, res) => {
+    // Set CORS headers explicitly
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET');
+    res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+    res.setHeader('Cross-Origin-Embedder-Policy', 'unsafe-none');
 
-  // Build file path
-  const filePath = path.join(__dirname, 'uploads', req.params.folder, req.params.filename);
+    // Build file path
+    const filePath = path.join(__dirname, 'uploads', req.params.folder, req.params.filename);
 
-  // Send file
-  res.sendFile(filePath, (err) => {
-    if (err) {
-      logger.error('Error serving file:', err);
-      res.status(404).json({ error: 'File not found' });
-    }
+    // Send file
+    res.sendFile(filePath, (err) => {
+      if (err) {
+        logger.error('Error serving file:', err);
+        res.status(404).json({ error: 'File not found' });
+      }
+    });
   });
-});
+}
 
 // Security middleware - applied to all routes EXCEPT /uploads
 app.use((req, res, next) => {

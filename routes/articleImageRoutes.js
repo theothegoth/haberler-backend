@@ -3,6 +3,7 @@ const router = express.Router();
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
+const FileType = require('file-type'); // Import file-type for magic byte validation
 const { authenticate } = require('../middleware/auth');
 const {
   addArticleImage,
@@ -60,7 +61,29 @@ router.post('/:articleId/images', (req, res, next) => {
     console.error('[MULTER_ERROR]', err);
     return res.status(400).json({ error: err.message });
   }
-  next();
+  
+  // Security Check: Validate file magic bytes using file-type
+  if (req.file) {
+    (async () => {
+      try {
+        const fileType = await FileType.fromFile(req.file.path);
+        const allowedMimes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+        
+        if (!fileType || !allowedMimes.includes(fileType.mime)) {
+          // Delete the file immediately
+          fs.unlink(req.file.path, () => {});
+          return res.status(400).json({ error: 'Invalid file type detected (magic byte mismatch)' });
+        }
+        next();
+      } catch (validationError) {
+        console.error('[FILE_VALIDATION_ERROR]', validationError);
+        fs.unlink(req.file.path, () => {});
+        return res.status(500).json({ error: 'File validation failed' });
+      }
+    })();
+  } else {
+    next();
+  }
 }, addArticleImage);
 
 // Get all images for an article (public)

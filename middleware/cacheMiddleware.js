@@ -25,11 +25,8 @@ function cacheMiddleware(ttl = 300, keyGenerator = null) {
       const cachedData = await getCache(cacheKey);
 
       if (cachedData) {
-        console.log(`[CACHE] Hit: ${cacheKey}`);
         return res.json(cachedData);
       }
-
-      console.log(`[CACHE] Miss: ${cacheKey}`);
 
       // Store original res.json to intercept response
       const originalJson = res.json.bind(res);

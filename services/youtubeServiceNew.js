@@ -49,8 +49,6 @@ class YouTubeService {
       return { message: 'Tüm kanallar güncel.', videosAdded: 0 };
     }
 
-    console.log(`${channels.length} kanal için güncelleme başlatılıyor...`);
-
     const channelIds = channels.map(c => c.channel_id);
     const lastCheckedDates = {};
     channels.forEach(c => {
@@ -76,8 +74,6 @@ class YouTubeService {
         }
       }
     }
-
-    console.log(`RSS'den ${videoIdsToFetch.size} yeni video bulundu.`);
 
     let videosAdded = 0;
 
@@ -122,7 +118,6 @@ class YouTubeService {
       await UserChannel.updateLastChecked(userId, channel.channel_id);
     }
 
-    console.log(`✅ ${videosAdded} yeni video eklendi.`);
     return { message: 'Videolar güncellendi.', videosAdded, channelsChecked: channels.length };
   }
 
@@ -263,7 +258,6 @@ class YouTubeService {
 
   static async cleanOldVideos() {
     const deleted = await VideoCache.cleanOldVideos(48);
-    console.log(`🗑️ ${deleted.length} eski video silindi.`);
     return { message: `${deleted.length} eski video silindi.` };
   }
 
@@ -279,13 +273,10 @@ class YouTubeService {
     // Check if video already exists in cache
     const existingVideo = await VideoCache.exists(videoId);
     if (existingVideo) {
-      console.log(`[FETCH_VIDEO] Video ${videoId} already in cache`);
       return { message: 'Video already cached', cached: true };
     }
 
     try {
-      console.log(`[FETCH_VIDEO] Fetching metadata for video: ${videoId}`);
-
       // Fetch video details from YouTube API
       const response = await axios.get('https://youtube.googleapis.com/youtube/v3/videos', {
         params: {
@@ -315,8 +306,6 @@ class YouTubeService {
 
       // Add to cache
       await VideoCache.addBatch([videoData]);
-
-      console.log(`[FETCH_VIDEO] Successfully cached video: ${videoData.title}`);
 
       return {
         message: 'Video fetched and cached successfully',

@@ -17,7 +17,6 @@ async function initializeRedis() {
         connectTimeout: 5000,
         reconnectStrategy: (retries) => {
           if (retries > 3) {
-            console.log('[REDIS] Max retries reached, disabling Redis cache');
             return false; // Stop retrying
           }
           return Math.min(retries * 100, 3000);
@@ -32,28 +31,24 @@ async function initializeRedis() {
     });
 
     redisClient.on('connect', () => {
-      console.log('[REDIS] Connecting...');
+      // Connecting...
     });
 
     redisClient.on('ready', () => {
-      console.log('[REDIS] Client ready');
       isRedisConnected = true;
     });
 
     redisClient.on('end', () => {
-      console.log('[REDIS] Connection closed');
       isRedisConnected = false;
     });
 
     // Connect to Redis
     await redisClient.connect();
-    console.log('[REDIS] Successfully connected');
     isRedisConnected = true;
 
     return redisClient;
   } catch (error) {
     console.error('[REDIS] Failed to connect:', error.message);
-    console.log('[REDIS] Continuing without cache...');
     isRedisConnected = false;
     return null;
   }
@@ -154,7 +149,6 @@ async function clearCache() {
 
   try {
     await redisClient.flushAll();
-    console.log('[REDIS] Cache cleared');
     return true;
   } catch (error) {
     console.error('[REDIS] Clear error:', error.message);
@@ -177,7 +171,6 @@ async function closeRedis() {
   if (redisClient) {
     try {
       await redisClient.quit();
-      console.log('[REDIS] Connection closed gracefully');
     } catch (error) {
       console.error('[REDIS] Error closing connection:', error.message);
     }

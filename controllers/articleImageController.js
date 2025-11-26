@@ -10,8 +10,6 @@ const addArticleImage = async (req, res) => {
     const { articleId } = req.params;
     const { caption } = req.body;
 
-    console.log('[IMAGE_UPLOAD] User:', userId, 'Article:', articleId);
-
     if (!userId) {
       return res.status(401).json({ error: 'Authentication required' });
     }
@@ -22,26 +20,19 @@ const addArticleImage = async (req, res) => {
       [articleId]
     );
 
-    console.log('[IMAGE_UPLOAD] Found in drafts:', articleResult.rows.length > 0);
-
     // If not found in drafts, check user_news table
     if (articleResult.rows.length === 0) {
       articleResult = await pool.query(
         'SELECT id, user_id FROM user_news WHERE id = $1',
         [articleId]
       );
-      console.log('[IMAGE_UPLOAD] Found in user_news:', articleResult.rows.length > 0, articleResult.rows[0]);
     }
 
     if (articleResult.rows.length === 0) {
-      console.log('[IMAGE_UPLOAD] Article not found');
       return res.status(404).json({ error: 'Article not found' });
     }
 
-    console.log('[IMAGE_UPLOAD] Article owner:', articleResult.rows[0].user_id, 'Current user:', userId);
-
     if (articleResult.rows[0].user_id !== userId) {
-      console.log('[IMAGE_UPLOAD] Permission denied - user mismatch');
       return res.status(403).json({ error: 'You do not have permission to add images to this article' });
     }
 
@@ -147,25 +138,14 @@ const updateImageCaption = async (req, res) => {
     const { imageId } = req.params;
     const { caption } = req.body;
 
-    console.log('[CAPTION_UPDATE] Request received:', {
-      userId,
-      imageId,
-      caption,
-      body: req.body,
-      params: req.params
-    });
-
     if (!userId) {
-      console.log('[CAPTION_UPDATE] No userId - authentication required');
       return res.status(401).json({ error: 'Authentication required' });
     }
 
     // Get image and verify ownership
     const image = await ArticleImage.getImageById(imageId);
-    console.log('[CAPTION_UPDATE] Image found:', image ? `ID: ${image.id}, Article: ${image.article_id}` : 'null');
 
     if (!image) {
-      console.log('[CAPTION_UPDATE] Image not found');
       return res.status(404).json({ error: 'Image not found' });
     }
 
@@ -174,7 +154,6 @@ const updateImageCaption = async (req, res) => {
       'SELECT user_id FROM drafts WHERE id = $1',
       [image.article_id]
     );
-    console.log('[CAPTION_UPDATE] Drafts check:', articleResult.rows);
 
     // If not found in drafts, check user_news table
     if (articleResult.rows.length === 0) {
@@ -182,17 +161,13 @@ const updateImageCaption = async (req, res) => {
         'SELECT user_id FROM user_news WHERE id = $1',
         [image.article_id]
       );
-      console.log('[CAPTION_UPDATE] User_news check:', articleResult.rows);
     }
 
     if (articleResult.rows.length === 0 || articleResult.rows[0].user_id !== userId) {
-      console.log('[CAPTION_UPDATE] Permission denied - Article not found or unauthorized');
       return res.status(403).json({ error: 'You do not have permission to update this image' });
     }
 
-    console.log('[CAPTION_UPDATE] Updating caption for image:', imageId);
     const updatedImage = await ArticleImage.updateCaption(imageId, caption);
-    console.log('[CAPTION_UPDATE] Caption updated successfully:', updatedImage);
 
     res.json({
       message: 'Caption updated successfully',

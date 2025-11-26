@@ -19,14 +19,8 @@ const createTransporter = () => {
     });
   } else {
     // Development: Log to console instead of sending
-    console.log('[EMAIL] Development mode - emails will be logged to console');
     return {
       sendMail: async (mailOptions) => {
-        console.log('\n[EMAIL] Would send email:');
-        console.log('To:', mailOptions.to);
-        console.log('Subject:', mailOptions.subject);
-        console.log('Text:', mailOptions.text);
-        console.log('HTML:', mailOptions.html);
         return { messageId: 'dev-' + Date.now() };
       }
     };
@@ -120,7 +114,6 @@ const sendVerificationEmail = async (email, username, token) => {
 
   try {
     const info = await transporter.sendMail(mailOptions);
-    console.log('[EMAIL] Verification email sent:', info.messageId);
     return { success: true, messageId: info.messageId };
   } catch (error) {
     console.error('[EMAIL] Error sending verification email:', error);
@@ -200,7 +193,6 @@ const sendWelcomeEmail = async (email, username) => {
 
   try {
     const info = await transporter.sendMail(mailOptions);
-    console.log('[EMAIL] Welcome email sent:', info.messageId);
     return { success: true, messageId: info.messageId };
   } catch (error) {
     console.error('[EMAIL] Error sending welcome email:', error);
@@ -298,7 +290,6 @@ const sendPasswordResetEmail = async (email, username, token) => {
 
   try {
     const info = await transporter.sendMail(mailOptions);
-    console.log('[EMAIL] Password reset email sent:', info.messageId);
     return { success: true, messageId: info.messageId };
   } catch (error) {
     console.error('[EMAIL] Error sending password reset email:', error);
@@ -398,7 +389,6 @@ const sendWeeklyDigestEmail = async (email, username, articles) => {
 
   try {
     const info = await transporter.sendMail(mailOptions);
-    console.log('[EMAIL] Weekly digest sent:', info.messageId);
     return { success: true, messageId: info.messageId };
   } catch (error) {
     console.error('[EMAIL] Error sending weekly digest:', error);
@@ -450,7 +440,6 @@ const sendNewFollowerEmail = async (email, username, followerName, followerId) =
 
   try {
     const info = await transporter.sendMail(mailOptions);
-    console.log('[EMAIL] New follower notification sent:', info.messageId);
     return { success: true, messageId: info.messageId };
   } catch (error) {
     console.error('[EMAIL] Error sending follower notification:', error);
@@ -503,7 +492,6 @@ const sendNewCommentEmail = async (email, username, commenterName, articleId, ar
 
   try {
     const info = await transporter.sendMail(mailOptions);
-    console.log('[EMAIL] Comment notification sent:', info.messageId);
     return { success: true, messageId: info.messageId };
   } catch (error) {
     console.error('[EMAIL] Error sending comment notification:', error);
@@ -556,7 +544,6 @@ const sendNewLikeEmail = async (email, username, likerName, articleId, articleTi
 
   try {
     const info = await transporter.sendMail(mailOptions);
-    console.log('[EMAIL] Like notification sent:', info.messageId);
     return { success: true, messageId: info.messageId };
   } catch (error) {
     console.error('[EMAIL] Error sending like notification:', error);

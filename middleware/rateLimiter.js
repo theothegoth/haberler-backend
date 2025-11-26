@@ -18,7 +18,7 @@ try {
     RedisStore = RedisStoreModule.default || RedisStoreModule;
   }
 } catch (err) {
-  console.log('[RATE LIMIT] Redis store not available, using memory store');
+  // Redis store not available, using memory store
 }
 
 const createRateLimiter = (windowMs = 15 * 60 * 1000, max = 100, message = null) => {
@@ -53,7 +53,6 @@ const createRateLimiter = (windowMs = 15 * 60 * 1000, max = 100, message = null)
         client: redisClient,
         prefix: 'rl:',
       });
-      console.log('[RATE LIMIT] Using Redis store');
     } catch (err) {
       console.warn('[RATE LIMIT] Failed to initialize Redis store:', err.message);
     }

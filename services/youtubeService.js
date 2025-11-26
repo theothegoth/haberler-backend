@@ -88,7 +88,6 @@ async function updateChannelList(countryCode = 'TR') {
 
     const channels = Array.from(channelMap.values());
     await saveChannelList(channels, countryCode);
-    console.log(`${countryCode} kanal listesi güncellendi. Toplam kanal: ${channels.length}`);
 
     return { message: `${countryCode} kanal listesi başarıyla güncellendi.` };
   } catch (error) {
@@ -174,7 +173,6 @@ async function updateVideoCache(countryCode = 'TR') {
     videosCache = cleanVideosCache(videosCache);
     await saveVideosCache(videosCache, countryCode);
 
-    console.log(`${countryCode} video cache başarıyla güncellendi. Toplam video: ${videosCache.length}`);
     return { message: `${countryCode} video cache başarıyla güncellendi.` };
   } catch (error) {
     console.error(`${countryCode} video cache güncellenirken hata:`, error.message);

@@ -6,7 +6,8 @@ const YouTubeService = require('../services/youtubeServiceNew');
 router.get('/my-videos', authenticate, async (req, res) => {
   try {
     const categoryId = req.query.category;
-    const videos = await YouTubeService.getUserVideos(req.user.userId, categoryId);
+    const userId = req.user.userId || req.user.id;
+    const videos = await YouTubeService.getUserVideos(userId, categoryId);
     res.json(videos);
   } catch (error) {
     console.error('Videolar alınırken hata:', error);
@@ -16,7 +17,8 @@ router.get('/my-videos', authenticate, async (req, res) => {
 
 router.post('/update', authenticate, async (req, res) => {
   try {
-    const result = await YouTubeService.updateUserVideos(req.user.userId);
+    const userId = req.user.userId || req.user.id;
+    const result = await YouTubeService.updateUserVideos(userId);
     res.json(result);
   } catch (error) {
     console.error('Videolar güncellenirken hata:', error);

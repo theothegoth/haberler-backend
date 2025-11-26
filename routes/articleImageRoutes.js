@@ -54,7 +54,6 @@ router.put('/:articleId/images/reorder', authenticate, reorderImages);
 
 // Add image to article (authenticated, with file upload)
 router.post('/:articleId/images', (req, res, next) => {
-  console.log('[ROUTE_HIT] POST /:articleId/images - Article ID:', req.params.articleId);
   next();
 }, authenticate, upload.single('image'), (err, req, res, next) => {
   if (err) {

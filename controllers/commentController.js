@@ -10,7 +10,6 @@ const createComment = async (req, res) => {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      console.log('Validation errors:', errors.array());
       return res.status(400).json({
         error: errors.array()[0].msg,
         errors: errors.array()
@@ -122,19 +121,7 @@ const getComments = async (req, res) => {
     const { newsId } = req.params;
     const userId = req.user ? (req.user.id || req.user.userId) : null; // Get userId if authenticated, null otherwise
 
-    console.log('[BACKEND GET COMMENTS] NewsId:', newsId, 'UserId:', userId);
-
     const comments = await Comment.getByNewsId(newsId, userId);
-
-    console.log('[BACKEND GET COMMENTS] Returning', comments.length, 'comments');
-    comments.forEach(c => {
-      console.log(`  Comment ${c.id}: like_count=${c.like_count}, user_has_liked=${c.user_has_liked}`);
-      if (c.replies) {
-        c.replies.forEach(r => {
-          console.log(`    Reply ${r.id}: like_count=${r.like_count}, user_has_liked=${r.user_has_liked}`);
-        });
-      }
-    });
 
     res.json(comments);
   } catch (error) {
@@ -173,11 +160,7 @@ const likeComment = async (req, res) => {
     const { commentId } = req.params;
     const userId = req.user?.id || req.user?.userId;
 
-    console.log('[BACKEND LIKE] User:', userId, 'attempting to LIKE comment:', commentId);
-
     const success = await Comment.like(commentId, userId);
-
-    console.log('[BACKEND LIKE] Result:', success ? 'SUCCESS' : 'FAILED (already liked)');
 
     if (!success) {
       return res.status(400).json({ error: 'Bu yorumu zaten beğendiniz' });
@@ -195,11 +178,7 @@ const unlikeComment = async (req, res) => {
     const { commentId } = req.params;
     const userId = req.user?.id || req.user?.userId;
 
-    console.log('[BACKEND UNLIKE] User:', userId, 'attempting to UNLIKE comment:', commentId);
-
     const success = await Comment.unlike(commentId, userId);
-
-    console.log('[BACKEND UNLIKE] Result:', success ? 'SUCCESS' : 'FAILED (not liked)');
 
     if (!success) {
       return res.status(400).json({ error: 'Bu yorumu beğenmediniz' });

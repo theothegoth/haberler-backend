@@ -20,7 +20,6 @@ const createTransporter = () => {
 
   try {
     const transporter = nodemailer.createTransporter(emailConfig);
-    console.log('✅ Email service configured successfully');
     return transporter;
   } catch (error) {
     console.error('❌ Error creating email transporter:', error);
@@ -35,8 +34,6 @@ if (transporter) {
   transporter.verify((error, success) => {
     if (error) {
       console.error('❌ Email service verification failed:', error);
-    } else {
-      console.log('✅ Email service is ready to send emails');
     }
   });
 }

@@ -24,7 +24,6 @@ router.post('/add', authenticate, async (req, res) => {
     }
 
     const userId = req.user?.id || req.user?.userId;
-    console.log('[ADD_CHANNEL] User ID:', userId, 'Input:', input);
 
     const result = await YouTubeService.addChannelForUser(userId, input);
     res.json(result);

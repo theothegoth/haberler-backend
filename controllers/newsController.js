@@ -65,8 +65,6 @@ const newsController = {
         return res.status(404).json({ error: 'Haber bulunamadı' });
       }
 
-      console.log('[DEBUG] getNews - Article ID:', id, 'User ID:', userId, 'user_has_liked:', news.user_has_liked);
-      
       // Track article view (don't wait for it)
       const ipAddress = req.ip || req.connection.remoteAddress;
       ArticleView.recordView(id, userId, ipAddress).catch(err => 

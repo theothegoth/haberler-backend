@@ -50,8 +50,6 @@ const draftController = {
       const { id } = req.params;
       const userId = req.user?.id || req.user?.userId;
 
-      console.log('[DRAFT_UPDATE] Draft ID:', id, 'User ID:', userId);
-
       const draft = await Draft.update({
         draftId: id,
         userId,
@@ -61,8 +59,6 @@ const draftController = {
         tags: tags || [],
         articleType
       });
-
-      console.log('[DRAFT_UPDATE] Update successful for draft:', draft.id, 'Owner:', draft.user_id);
 
       res.json({
         message: 'Draft updated',
@@ -83,9 +79,6 @@ const draftController = {
       const userId = req.user?.id || req.user?.userId;
       const drafts = await Draft.findAllByUserId(userId);
 
-      console.log('[GET_DRAFTS] User:', userId, 'Drafts count:', drafts.length);
-      console.log('[GET_DRAFTS] First draft image_url:', drafts[0]?.image_url);
-
       res.json(drafts);
     } catch (error) {
       console.error('Error getting drafts:', error);
@@ -99,11 +92,7 @@ const draftController = {
       const { id } = req.params;
       const userId = req.user?.id || req.user?.userId;
 
-      console.log('[DRAFT_GET] Draft ID:', id, 'User ID:', userId);
-
       const draft = await Draft.findById(id, userId);
-
-      console.log('[DRAFT_GET] Draft found:', !!draft, draft ? `Owner: ${draft.user_id}` : 'null');
 
       if (!draft) {
         return res.status(404).json({ error: 'Draft not found' });

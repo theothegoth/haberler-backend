@@ -4,7 +4,20 @@
       "Bash(npm start)",
       "Bash(taskkill:*)",
       "Bash(curl:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(git commit -m \"$(cat <<''EOF''\nFeature: Complete article management system with media support and accountability\n\nMajor Features:\n- Multi-image upload system with drag-and-drop reordering\n- YouTube video integration with high-quality thumbnail caching\n- Display thumbnail fallback (image -> video thumbnail)\n- EditedBadge component showing edit timestamps with 5-min grace period\n- Admin panel with user management and content moderation\n- User ban system with role-based access control\n\nBackend Changes:\n- ArticleImage and ArticleVideo models with shared sequence\n- Cloudinary integration for image uploads\n- Enhanced YouTube service with best thumbnail selection (maxres/high priority)\n- Updated all article queries to include display_thumbnail using COALESCE\n- Added updated_at field to bookmark queries\n- Admin authentication middleware and controllers\n- Content validation middleware\n\nDatabase Migrations:\n- 018: Create article_images table with display_order\n- 019: Remove deprecated image_url from user_news\n- 020: Create shared content sequence for images/videos\n- 021: Remove FK constraint from article_images\n- 022: Create article_videos table\n- 023: Add user roles (user/admin)\n- 024: Add user ban system\n\n🤖 Generated with Claude Code\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")",
+      "Bash(git push)",
+      "Bash(git commit -m \"$(cat <<''EOF''\nFeature: Complete article management UI with media support and accountability\n\nMajor Features:\n- ArticleImageGallery component with drag-and-drop reordering\n- ArticleVideoAttachment component for YouTube video management\n- EditedBadge component on all article cards (NewsFeed, MyArticles, SavedArticles, AdvancedSearch, UserProfile, ArticleDetail)\n- Admin panel UI with dashboard, user management, content moderation, and reports\n- Content quality indicator for article validation\n- Display thumbnail support (image fallback to video thumbnail)\n\nFrontend Components:\n- EditedBadge: Shows edit timestamp with 5-minute grace period, time-based display\n- ArticleImageGallery: Multi-image upload with drag-drop reordering, delete functionality\n- ArticleVideoAttachment: YouTube URL validation, video preview, high-quality thumbnails\n- ContentQualityIndicator: Real-time article quality feedback\n- AdminLayout: Consistent admin panel navigation and styling\n\nPage Updates:\n- WriteNews & EditArticle: Multi-image upload, video attachment, quality indicator\n- ArticleDetail: Image gallery, video player, edited badge, similar articles\n- All card pages: EditedBadge integration (MyArticles, SavedArticles, AdvancedSearch, UserProfile, NewsFeed)\n- Admin pages: Dashboard, user management, article moderation, report handling\n\nTranslations:\n- Added article.edited* keys for EditedBadge in en.json and tr.json\n- Admin panel translations\n- Content quality translations\n\nServices:\n- articleImageService: Image upload, reorder, delete\n- articleVideoService: Video attachment management\n- adminService: Admin API endpoints\n- authService: Centralized authentication\n\n🤖 Generated with Claude Code\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")",
+      "Bash(psql:*)",
+      "Bash(\"C:\\Program Files\\PostgreSQL\\16\\bin\\psql.exe\" -U postgres -d haberler -f migrations/025_add_article_type.sql)",
+      "Bash(node scripts/run-migration-025.js:*)",
+      "Bash(node scripts/run-migration-026.js:*)",
+      "Bash(git commit:*)",
+      "Bash(\"C:\\Program Files\\PostgreSQL\\16\\bin\\psql.exe\" -U postgres -d haberler -c \"SELECT id, article_id, image_url, display_order FROM article_images WHERE article_id = 101;\")",
+      "Bash(node check-draft-media.js:*)",
+      "Bash(node check-draft-content.js:*)",
+      "Bash(node test-saved-articles.js:*)",
+      "Bash(node:*)"
     ],
     "deny": [],
     "ask": []

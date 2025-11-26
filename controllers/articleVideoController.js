@@ -17,8 +17,6 @@ const articleVideoController = {
         return res.status(400).json({ error: 'Video ID is required' });
       }
 
-      console.log('[ADD_VIDEO] Article ID:', articleId, 'Video ID:', videoId, 'User ID:', userId);
-
       // Check if article already has a video (1 video limit)
       const existingVideos = await ArticleVideo.getArticleVideos(articleId);
       if (existingVideos.length >= 1) {
@@ -38,8 +36,6 @@ const articleVideoController = {
       }
 
       const video = await ArticleVideo.addVideo(articleId, videoId);
-
-      console.log('[ADD_VIDEO] Video added successfully:', video.id);
 
       res.status(201).json({
         message: 'Video added successfully',
@@ -68,11 +64,7 @@ const articleVideoController = {
     try {
       const { articleId } = req.params;
 
-      console.log('[GET_VIDEOS] Article ID:', articleId);
-
       const videos = await ArticleVideo.getArticleVideos(articleId);
-
-      console.log('[GET_VIDEOS] Found', videos.length, 'videos');
 
       res.json({ videos });
     } catch (error) {
@@ -89,15 +81,11 @@ const articleVideoController = {
       const { videoId } = req.params;
       const userId = req.user?.id || req.user?.userId;
 
-      console.log('[DELETE_VIDEO] Video ID:', videoId, 'User ID:', userId);
-
       const video = await ArticleVideo.deleteVideo(videoId);
 
       if (!video) {
         return res.status(404).json({ error: 'Video not found' });
       }
-
-      console.log('[DELETE_VIDEO] Video deleted:', video.id);
 
       res.json({
         message: 'Video deleted successfully',
@@ -115,8 +103,6 @@ const articleVideoController = {
   async getVideo(req, res) {
     try {
       const { videoId } = req.params;
-
-      console.log('[GET_VIDEO] Video ID:', videoId);
 
       const video = await ArticleVideo.getVideoById(videoId);
 

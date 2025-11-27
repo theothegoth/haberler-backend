@@ -26,7 +26,15 @@ class Notification {
 
   static async getUnreadCount(userId) {
     const result = await pool.query(
-      'SELECT COUNT(*) as count FROM notifications WHERE user_id = $1 AND is_read = FALSE',
+      `SELECT COUNT(n.id) as count 
+       FROM notifications n
+       LEFT JOIN user_news un ON (n.entity_type = 'news' AND n.entity_id = un.id)
+       WHERE n.user_id = $1 
+       AND n.is_read = FALSE
+       AND (
+         n.entity_type != 'news' 
+         OR (n.entity_type = 'news' AND un.id IS NOT NULL)
+       )`,
       [userId]
     );
     return parseInt(result.rows[0].count);

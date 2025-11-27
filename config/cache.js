@@ -177,12 +177,55 @@ async function closeRedis() {
   }
 }
 
+
+/**
+ * Delete all cache entries for a user's articles (all limit/offset variations)
+ * @param {number} userId - User ID
+ * @returns {Promise<number>} Number of keys deleted
+ */
+async function deleteUserArticleCaches(userId) {
+  if (!isRedisConnected || !redisClient) {
+    return 0;
+  }
+  try {
+    const pattern = `user:${userId}:articles:*`;
+    return await deleteCachePattern(pattern);
+  } catch (error) {
+    console.error('[REDIS] Delete user article caches error:', error.message);
+    return 0;
+  }
+}
+
+
+/**
+ * Clear ALL cache entries for a user's articles - ALL possible key formats
+ * @param {number} userId - User ID
+ */
+async function clearAllUserArticleCaches(userId) {
+  if (!isRedisConnected || !redisClient) {
+    return 0;
+  }
+  const patterns = [
+    `user:${userId}:articles:*`,
+    `api:/api/news/my-articles:${userId}:*`,
+    `api:/api/news/my/articles:${userId}:*`
+  ];
+  let total = 0;
+  for (const pattern of patterns) {
+    total += await deleteCachePattern(pattern);
+  }
+  console.log(`[CACHE] Cleared ${total} cache entries for user ${userId}`);
+  return total;
+}
+
 module.exports = {
   initializeRedis,
   getCache,
   setCache,
   deleteCache,
   deleteCachePattern,
+  deleteUserArticleCaches,
+  clearAllUserArticleCaches,
   clearCache,
   isConnected,
   closeRedis,

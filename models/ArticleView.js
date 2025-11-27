@@ -4,13 +4,28 @@ class ArticleView {
   // Record a view for an article
   static async recordView(newsId, userId = null, ipAddress = null) {
     try {
-      // Try to insert a new view record
-      await pool.query(
-        `INSERT INTO article_views (news_id, user_id, ip_address)
-         VALUES ($1, $2, $3)
-         ON CONFLICT (news_id, user_id, ip_address) DO NOTHING`,
-        [newsId, userId, ipAddress]
-      );
+      // Check if view already exists
+      let existingView;
+      if (userId) {
+        existingView = await pool.query(
+          'SELECT id FROM article_views WHERE news_id = $1 AND user_id = $2',
+          [newsId, userId]
+        );
+      } else if (ipAddress) {
+        existingView = await pool.query(
+          'SELECT id FROM article_views WHERE news_id = $1 AND user_id IS NULL AND ip_address = $2',
+          [newsId, ipAddress]
+        );
+      }
+
+      // Only insert if it doesn't exist
+      if (!existingView || existingView.rows.length === 0) {
+        await pool.query(
+          `INSERT INTO article_views (news_id, user_id, ip_address)
+           VALUES ($1, $2, $3)`,
+          [newsId, userId, ipAddress]
+        );
+      }
 
       // Increment the view count in user_news table
       await pool.query(
@@ -30,7 +45,6 @@ class ArticleView {
       return false;
     }
   }
-
   // Get view count for an article
   static async getViewCount(newsId) {
     const result = await pool.query(

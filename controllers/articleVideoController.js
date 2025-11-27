@@ -1,118 +1,109 @@
 const ArticleVideo = require('../models/ArticleVideo');
 const YouTubeService = require('../services/youtubeServiceNew');
+const { deleteCachePattern, deleteCache, deleteUserArticleCaches } = require('../config/cache');
 
 const articleVideoController = {
-  /**
-   * Add a video to an article/draft
-   * Enforces 1 video per article limit
-   * Fetches and caches video metadata if not already cached
-   */
   async addVideo(req, res) {
     try {
       const { articleId } = req.params;
       const { videoId } = req.body;
       const userId = req.user?.id || req.user?.userId;
 
-      if (!videoId) {
-        return res.status(400).json({ error: 'Video ID is required' });
+      if (!userId) return res.status(401).json({ error: 'Authentication required' });
+      if (!videoId) return res.status(400).json({ error: 'Video ID is required' });
+
+      // Verify article
+      const pool = require('../config/database');
+      let articleResult = await pool.query('SELECT id, user_id FROM drafts WHERE id = $1', [articleId]);
+      if (articleResult.rows.length === 0) {
+        articleResult = await pool.query('SELECT id, user_id FROM user_news WHERE id = $1', [articleId]);
       }
 
-      // Check if article already has a video (1 video limit)
+      if (articleResult.rows.length === 0) return res.status(404).json({ error: 'Article not found' });
+      if (articleResult.rows[0].user_id !== userId) return res.status(403).json({ error: 'Permission denied' });
+
+      // Check limit
       const existingVideos = await ArticleVideo.getArticleVideos(articleId);
-      if (existingVideos.length >= 1) {
-        return res.status(400).json({
-          error: 'This article already has a video. Please remove the current video first.'
-        });
-      }
+      if (existingVideos.length >= 1) return res.status(400).json({ error: 'One video limit reached' });
 
-      // Fetch and cache video metadata from YouTube if not already cached
+      // Cache video
       try {
         await YouTubeService.fetchAndCacheVideo(videoId);
-      } catch (fetchError) {
-        console.error('[ADD_VIDEO] Failed to fetch video metadata:', fetchError.message);
-        return res.status(400).json({
-          error: fetchError.message || 'Video not found or unavailable'
-        });
+      } catch (err) {
+        console.error('YouTube fetch error:', err);
+        return res.status(400).json({ error: err.message || 'Video unavailable' });
       }
 
       const video = await ArticleVideo.addVideo(articleId, videoId);
 
-      res.status(201).json({
-        message: 'Video added successfully',
-        video
-      });
+      // Clear Cache
+      try {
+        await Promise.allSettled([
+          deleteCache(`article:${articleId}`),
+          deleteUserArticleCaches ? deleteUserArticleCaches(userId) : deleteCachePattern(`user:${userId}:articles:*`),
+          deleteCachePattern('news:feed:*')
+        ]);
+      } catch (e) { console.error('Cache error:', e); }
+
+      res.status(201).json({ message: 'Video added', video });
     } catch (error) {
-      console.error('[ADD_VIDEO] Error:', error);
-
-      // Handle foreign key violations
-      if (error.code === '23503') {
-        if (error.constraint === 'fk_article_video_video') {
-          return res.status(400).json({
-            error: 'Video not found. Please select a valid video.'
-          });
-        }
-      }
-
+      console.error('Add video error:', error);
       res.status(500).json({ error: 'Error adding video' });
     }
   },
 
-  /**
-   * Get all videos for an article/draft
-   */
   async getArticleVideos(req, res) {
     try {
-      const { articleId } = req.params;
-
-      const videos = await ArticleVideo.getArticleVideos(articleId);
-
+      const videos = await ArticleVideo.getArticleVideos(req.params.articleId);
       res.json({ videos });
     } catch (error) {
-      console.error('[GET_VIDEOS] Error:', error);
       res.status(500).json({ error: 'Error loading videos' });
     }
   },
 
-  /**
-   * Delete a video attachment
-   */
   async deleteVideo(req, res) {
     try {
       const { videoId } = req.params;
       const userId = req.user?.id || req.user?.userId;
+      if (!userId) return res.status(401).json({ error: 'Auth required' });
 
-      const video = await ArticleVideo.deleteVideo(videoId);
+      const video = await ArticleVideo.getVideoById(videoId);
+      if (!video) return res.status(404).json({ error: 'Video not found' });
 
-      if (!video) {
-        return res.status(404).json({ error: 'Video not found' });
+      const pool = require('../config/database');
+      let articleResult = await pool.query('SELECT user_id FROM drafts WHERE id = $1', [video.article_id]);
+      if (articleResult.rows.length === 0) {
+        articleResult = await pool.query('SELECT user_id FROM user_news WHERE id = $1', [video.article_id]);
       }
 
-      res.json({
-        message: 'Video deleted successfully',
-        video
-      });
+      if (articleResult.rows.length === 0 || articleResult.rows[0].user_id !== userId) {
+        return res.status(403).json({ error: 'Permission denied' });
+      }
+
+      const deletedVideo = await ArticleVideo.deleteVideo(videoId);
+
+      // Clear Cache
+      try {
+        await Promise.allSettled([
+          deleteCache(`article:${video.article_id}`),
+          deleteUserArticleCaches ? deleteUserArticleCaches(userId) : deleteCachePattern(`user:${userId}:articles:*`),
+          deleteCachePattern('news:feed:*')
+        ]);
+      } catch (e) { console.error('Cache error:', e); }
+
+      res.json({ message: 'Deleted successfully', video: deletedVideo });
     } catch (error) {
-      console.error('[DELETE_VIDEO] Error:', error);
+      console.error('Delete video error:', error);
       res.status(500).json({ error: 'Error deleting video' });
     }
   },
 
-  /**
-   * Get a single video attachment
-   */
   async getVideo(req, res) {
     try {
-      const { videoId } = req.params;
-
-      const video = await ArticleVideo.getVideoById(videoId);
-
-      if (!video) {
-        return res.status(404).json({ error: 'Video not found' });
-      }
-
+      const video = await ArticleVideo.getVideoById(req.params.videoId);
+      if (!video) return res.status(404).json({ error: 'Not found' });
       res.json({ video });
     } catch (error) {
-      console.error('[GET_VIDEO] Error:', error);
       res.status(500).json({ error: 'Error loading video' });
     }
   }

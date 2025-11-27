@@ -1,8 +1,4 @@
--- Create database
-CREATE DATABASE haber_db;
 
--- Connect to the database
-\c haber_db;
 
 -- Users table
 CREATE TABLE users (

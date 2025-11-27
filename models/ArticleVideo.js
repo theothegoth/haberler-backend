@@ -30,12 +30,12 @@ class ArticleVideo {
         vc.channel_id,
         vc.channel_title,
         vc.title,
-        vc.thumbnail,
+        COALESCE(vc.max_res_thumbnail, vc.thumbnail) as thumbnail,
         vc.published_at,
         vc.like_count,
         vc.category_id
        FROM article_videos av
-       JOIN videos_cache vc ON av.video_id = vc.video_id
+       LEFT JOIN videos_cache vc ON av.video_id = vc.video_id
        WHERE av.article_id = $1
        ORDER BY av.display_order ASC, av.created_at ASC`,
       [articleId]
@@ -68,12 +68,12 @@ class ArticleVideo {
         vc.channel_id,
         vc.channel_title,
         vc.title,
-        vc.thumbnail,
+        COALESCE(vc.max_res_thumbnail, vc.thumbnail) as thumbnail,
         vc.published_at,
         vc.like_count,
         vc.category_id
        FROM article_videos av
-       JOIN videos_cache vc ON av.video_id = vc.video_id
+       LEFT JOIN videos_cache vc ON av.video_id = vc.video_id
        WHERE av.id = $1`,
       [id]
     );

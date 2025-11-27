@@ -82,10 +82,10 @@ const cacheKeys = {
   // User articles - cache per user
   userArticles: (req) => {
     const userId = req.params.userId || req.user?.userId;
-    const page = req.query.page || 1;
-    return `user:${userId}:articles:page:${page}`;
+    const limit = req.query.limit || 20;
+    const offset = req.query.offset || 0;
+    return `user:${userId}:articles:limit:${limit}:offset:${offset}`;
   },
-
   // Explore/search - cache based on query
   explore: (req) => {
     const query = JSON.stringify(req.query);

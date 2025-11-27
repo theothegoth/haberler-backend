@@ -73,8 +73,7 @@ const newsController = {
       res.json(news);
     } catch (error) {
       console.error('Error getting news:', error);
-      console.error('Error getting news - Stack:', error.stack);
-      res.status(500).json({ error: 'Haber getirilirken bir hata oluştu', details: process.env.NODE_ENV === 'development' ? error.message : undefined });
+      res.status(500).json({ error: 'Haber getirilirken bir hata oluştu' });
     }
   },
 

@@ -22,7 +22,6 @@ const {
   preventHpp,
   xssProtection,
   securityHeaders,
-  httpsRedirect,
   requestSizeLimiter,
   attackPatternDetection
 } = require('./middleware/security');
@@ -57,41 +56,24 @@ validateEnv();
 const app = express();
 const port = process.env.PORT || 5000;
 
-// Serve uploaded files with explicit route handler to bypass all middleware
-// Only enable in development or if strictly needed. In production, files should be served from Cloudinary/S3/CDN.
-if (process.env.NODE_ENV !== 'production') {
-  app.get('/uploads/:folder/:filename', (req, res) => {
-    // Set CORS headers explicitly
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'GET');
-    res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
-    res.setHeader('Cross-Origin-Embedder-Policy', 'unsafe-none');
+// Serve uploaded files statically (enabled for production too)
+// This replaces the restricted dev-only block
+    // Serve uploaded files - Handle both with and without /api prefix
+    const serveUploads = (req, res, next) => {
+      res.setHeader('Access-Control-Allow-Origin', '*');
+      res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+      next();
+    };
 
-    // Build file path
-    const filePath = path.join(__dirname, 'uploads', req.params.folder, req.params.filename);
-
-    // Send file
-    res.sendFile(filePath, (err) => {
-      if (err) {
-        logger.error('Error serving file:', err);
-        res.status(404).json({ error: 'File not found' });
-      }
-    });
-  });
-}
-
+    // Mount at /uploads (standard)
+    app.use('/uploads', serveUploads, express.static(path.join(__dirname, 'uploads')));
+    
+    // Mount at /api/uploads (in case Nginx doesn't strip /api)
+    app.use('/api/uploads', serveUploads, express.static(path.join(__dirname, 'uploads')));
 // Security middleware - applied to all routes EXCEPT /uploads
 app.use((req, res, next) => {
-  // Skip all security middleware for uploads
-  if (req.path.startsWith('/uploads/')) {
-    return next();
-  }
-  helmetConfig(req, res, next);
-});
-
-app.use((req, res, next) => {
   if (req.path.startsWith('/uploads/')) return next();
-  httpsRedirect(req, res, next);
+  helmetConfig(req, res, next);
 });
 
 app.use((req, res, next) => {
@@ -109,22 +91,22 @@ app.use((req, res, next) => {
   attackPatternDetection(req, res, next);
 });
 
-// CORS - skip for uploads as we set headers manually
+// CORS - skip for uploads
 app.use((req, res, next) => {
   if (req.path.startsWith('/uploads/')) return next();
   cors(corsOptions)(req, res, next);
 });
 
-// Body parsers with size limits
+// Body parsers
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// Data sanitization (must be after body parsers)
-app.use(sanitizeData); // NoSQL injection protection
-app.use(xssProtection); // XSS protection
-app.use(preventHpp); // HTTP parameter pollution protection
+// Sanitization
+app.use(sanitizeData);
+app.use(xssProtection);
+app.use(preventHpp);
 
-// Request logging
+// Logging
 app.use(requestLogger);
 
 app.get('/api/health', (req, res) => {
@@ -132,11 +114,11 @@ app.get('/api/health', (req, res) => {
     status: 'OK',
     message: 'Backend is running',
     timestamp: new Date().toISOString(),
-    uptime: process.uptime(),
     environment: process.env.NODE_ENV
   });
 });
 
+// Routes
 app.use('/api/auth', authLimiter, authRoutes);
 app.use('/api/channels', apiLimiter, channelRoutes);
 app.use('/api/videos', apiLimiter, videoRoutes);
@@ -157,15 +139,15 @@ app.use('/api/articles', uploadLimiter, articleImageRoutes);
 app.use('/api/articles', apiLimiter, articleVideoRoutes);
 app.use('/api/admin', apiLimiter, adminRoutes);
 
-// Test email routes (only in development)
 if (process.env.NODE_ENV !== 'production') {
   app.use('/api/test-emails', apiLimiter, testEmailRoutes);
-  logger.info('Test email routes enabled (development mode)');
+  logger.info('Test email routes enabled');
 }
 
 app.use(notFound);
 app.use(errorHandler);
 
+// Cron jobs
 cron.schedule('*/30 * * * *', async () => {
   try {
     logger.info('Starting scheduled video cleanup...');
@@ -176,59 +158,28 @@ cron.schedule('*/30 * * * *', async () => {
   }
 });
 
-// Initialize Redis cache
+// Start server
 initializeRedis().catch(err => {
-  logger.warn('Redis initialization failed, continuing without cache:', err.message);
+  logger.warn('Redis initialization failed:', err.message);
 });
 
 const server = app.listen(port, () => {
   logger.info(`Backend running on http://localhost:${port}`);
-  logger.info(`Health check available at http://localhost:${port}/api/health`);
-  logger.info(`Environment: ${process.env.NODE_ENV}`);
-
-  // Start scheduled jobs
-  scheduleWeeklyDigest();
 });
 
+// Graceful shutdown
 const gracefulShutdown = async (signal) => {
-  logger.info(`${signal} received, shutting down gracefully...`);
-
+  logger.info(`${signal} received, shutting down...`);
   server.close(async () => {
-    logger.info('HTTP server closed');
-
     try {
-      // Close Redis connection
       await closeRedis();
-      logger.info('Redis connection closed');
-    } catch (error) {
-      logger.error('Error closing Redis connection:', error);
-    }
-
-    try {
       const pool = require('./config/database');
       await pool.end();
-      logger.info('Database connections closed');
-    } catch (error) {
-      logger.error('Error closing database connections:', error);
-    }
-
+    } catch (e) { logger.error(e); }
     process.exit(0);
   });
-
-  setTimeout(() => {
-    logger.error('Forcefully shutting down after timeout');
-    process.exit(1);
-  }, 10000);
+  setTimeout(() => process.exit(1), 10000);
 };
 
 process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
 process.on('SIGINT', () => gracefulShutdown('SIGINT'));
-
-process.on('unhandledRejection', (reason, promise) => {
-  logger.error('Unhandled Rejection at:', { promise, reason });
-});
-
-process.on('uncaughtException', (error) => {
-  logger.error('Uncaught Exception:', error);
-  gracefulShutdown('UNCAUGHT_EXCEPTION');
-});

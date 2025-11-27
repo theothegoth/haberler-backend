@@ -1,0 +1,28 @@
+=== QUICK FIX FOR CACHE INVALIDATION ===
+
+SSH into your server, then run these commands one by one:
+
+1. Update articleVideoController.js - addVideo function:
+sed -i '41,44c\      // Invalidate caches for this article and user'\''s articles list (await to ensure completion)\n      await Promise.allSettled([\n        deleteCache(`article:${articleId}`),\n        deleteCachePattern(`user:${userId}:articles:*`),\n        deleteCachePattern('\''news:feed:*'\'')\n      ]).catch(err => console.error('\''[CACHE] Invalidation error:'\'', err));' /root/haber-backend/controllers/articleVideoController.js
+
+2. Update articleVideoController.js - deleteVideo function:
+sed -i '98,100c\      // Invalidate caches for this article and user'\''s articles list (await to ensure completion)\n      await Promise.allSettled([\n        deleteCache(`article:${video.article_id}`),\n        deleteCachePattern(`user:${userId}:articles:*`),\n        deleteCachePattern('\''news:feed:*'\'')\n      ]).catch(err => console.error('\''[CACHE] Invalidation error:'\'', err));' /root/haber-backend/controllers/articleVideoController.js
+
+3. Update articleImageController.js - addArticleImage:
+sed -i '85,88c\    // Invalidate caches for this article and user'\''s articles list (await to ensure completion)\n    await Promise.allSettled([\n      deleteCache(`article:${articleId}`),\n      deleteCachePattern(`user:${userId}:articles:*`),\n      deleteCachePattern('\''news:feed:*'\'')\n    ]).catch(err => console.error('\''[CACHE] Invalidation error:'\'', err));' /root/haber-backend/controllers/articleImageController.js
+
+4. Update articleImageController.js - deleteArticleImage:
+sed -i '239,242c\    // Invalidate caches for this article and user'\''s articles list (await to ensure completion)\n    await Promise.allSettled([\n      deleteCache(`article:${image.article_id}`),\n      deleteCachePattern(`user:${userId}:articles:*`),\n      deleteCachePattern('\''news:feed:*'\'')\n    ]).catch(err => console.error('\''[CACHE] Invalidation error:'\'', err));' /root/haber-backend/controllers/articleImageController.js
+
+5. Update articleImageController.js - updateImageCaption:
+sed -i '180,181c\    // Invalidate caches for this article (await to ensure completion)\n    await Promise.allSettled([\n      deleteCache(`article:${image.article_id}`),\n      deleteCachePattern(`user:${userId}:articles:*`),\n      deleteCachePattern('\''news:feed:*'\'')\n    ]).catch(err => console.error('\''[CACHE] Invalidation error:'\'', err));' /root/haber-backend/controllers/articleImageController.js
+
+6. Update newsController.js - updateNews:
+sed -i '159,162c\      // Invalidate relevant caches (await to ensure completion)\n      await Promise.allSettled([\n        deleteCache(`article:${id}`),\n        deleteCachePattern('\''news:feed:*'\''),\n        deleteCachePattern(`user:${userId}:articles:*`)\n      ]).catch(err => console.error('\''[CACHE] Invalidation error:'\'', err));' /root/haber-backend/controllers/newsController.js
+
+7. Update newsController.js - deleteNews:
+sed -i '183,187c\      // Invalidate relevant caches (await to ensure completion)\n      await Promise.allSettled([\n        deleteCache(`article:${id}`),\n        deleteCachePattern('\''news:feed:*'\''),\n        deleteCachePattern(`user:${userId}:articles:*`),\n        deleteCachePattern(`comments:article:${id}`)\n      ]).catch(err => console.error('\''[CACHE] Invalidation error:'\'', err));' /root/haber-backend/controllers/newsController.js
+
+8. Rebuild backend:
+cd /root && docker-compose up -d --build backend
+

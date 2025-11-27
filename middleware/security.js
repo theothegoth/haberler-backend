@@ -186,12 +186,12 @@ const securityHeaders = (req, res, next) => {
 /**
  * HTTPS redirect middleware (production only)
  */
-const httpsRedirect = (req, res, next) => {
-  if (process.env.NODE_ENV === 'production' && !req.secure) {
-    return res.redirect(301, `https://${req.headers.host}${req.url}`);
-  }
-  next();
-};
+//const httpsRedirect = (req, res, next) => {
+ // if (process.env.NODE_ENV === 'production' && !req.secure) {
+   // return res.redirect(301, `https://${req.headers.host}${req.url}`);
+ // }
+ // next();
+//};
 
 /**
  * Request size limiter
@@ -240,7 +240,7 @@ module.exports = {
   preventHpp,
   xssProtection,
   securityHeaders,
-  httpsRedirect,
+//  httpsRedirect,
   requestSizeLimiter,
   attackPatternDetection,
 };

@@ -3,10 +3,9 @@ const { body, validationResult } = require('express-validator');
 const User = require('../models/User');
 const { JWT_SECRET } = require('../middleware/auth');
 const { generateVerificationToken, sendVerificationEmail, sendPasswordResetEmail } = require('../services/emailService');
-
 const generateToken = (user) => {
   return jwt.sign(
-    { id: user.id, email: user.email, username: user.username },
+    { userId: user.id, email: user.email, username: user.username },
     JWT_SECRET,
     { expiresIn: '7d' }
   );

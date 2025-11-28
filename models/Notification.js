@@ -16,7 +16,12 @@ class Notification {
       `SELECT n.*, u.username as actor_username
        FROM notifications n
        LEFT JOIN users u ON n.actor_id = u.id
+       LEFT JOIN user_news un ON (n.entity_type = 'news' AND n.entity_id = un.id)
        WHERE n.user_id = $1
+       AND (
+         n.entity_type != 'news' 
+         OR (n.entity_type = 'news' AND un.id IS NOT NULL)
+       )
        ORDER BY n.created_at DESC
        LIMIT $2 OFFSET $3`,
       [userId, limit, offset]

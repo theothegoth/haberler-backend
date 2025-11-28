@@ -106,13 +106,21 @@ const newsController = {
     }
   },
 
-  // Get news feed (from followed users)
+  // Get news feed (from followed users OR public feed for guests)
   async getNewsFeed(req, res) {
     try {
       const userId = req.user?.id || req.user?.userId;
       const { limit = 20, offset = 0 } = req.query;
 
-      const news = await UserNews.getNewsFeed(userId, parseInt(limit), parseInt(offset));
+      let news;
+      if (userId) {
+        // Logged in user: Get personalized feed
+        news = await UserNews.getNewsFeed(userId, parseInt(limit), parseInt(offset));
+      } else {
+        // Guest user: Get all public news
+        news = await UserNews.getAllPublic(parseInt(limit), parseInt(offset));
+      }
+      
       res.json(news);
     } catch (error) {
       console.error('Error getting news feed:', error);

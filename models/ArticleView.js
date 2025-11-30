@@ -4,34 +4,18 @@ class ArticleView {
   // Record a view for an article
   static async recordView(newsId, userId = null, ipAddress = null) {
     try {
-      // Check if view already exists
-      let existingView;
-      if (userId) {
-        existingView = await pool.query(
-          'SELECT id FROM article_views WHERE news_id = $1 AND user_id = $2',
-          [newsId, userId]
-        );
-      } else if (ipAddress) {
-        existingView = await pool.query(
-          'SELECT id FROM article_views WHERE news_id = $1 AND user_id IS NULL AND ip_address = $2',
-          [newsId, ipAddress]
-        );
-      }
+      // Always insert a new view record (removed unique check)
+      await pool.query(
+        `INSERT INTO article_views (news_id, user_id, ip_address, viewed_at)
+         VALUES ($1, $2, $3, NOW())`,
+        [newsId, userId, ipAddress]
+      );
 
-      // Only insert if it doesn't exist
-      if (!existingView || existingView.rows.length === 0) {
-        await pool.query(
-          `INSERT INTO article_views (news_id, user_id, ip_address)
-           VALUES ($1, $2, $3)`,
-          [newsId, userId, ipAddress]
-        );
-      }
-
-      // Increment the view count in user_news table
+      // Update the view count in user_news table based on TOTAL rows
       await pool.query(
         `UPDATE user_news
          SET view_count = (
-           SELECT COUNT(DISTINCT COALESCE(user_id::text, ip_address))
+           SELECT COUNT(*)
            FROM article_views
            WHERE news_id = $1
          )
@@ -45,6 +29,7 @@ class ArticleView {
       return false;
     }
   }
+
   // Get view count for an article
   static async getViewCount(newsId) {
     const result = await pool.query(
@@ -77,6 +62,17 @@ class ArticleView {
       [limit]
     );
     return result.rows;
+  }
+
+  // Helper to get unique viewers count if needed for analytics
+  static async getUniqueViewersCount(newsId) {
+     const result = await pool.query(
+      `SELECT COUNT(DISTINCT COALESCE(user_id::text, ip_address)) as unique_count
+       FROM article_views
+       WHERE news_id = $1`,
+      [newsId]
+    );
+    return result.rows[0]?.unique_count || 0;
   }
 }
 

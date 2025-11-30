@@ -12,7 +12,13 @@ exports.getAnalyticsOverview = async (req, res) => {
         COALESCE(SUM(un.view_count), 0) as total_views,
         COUNT(DISTINCT nl.id) as total_likes,
         COUNT(DISTINCT c.id) as total_comments,
-        COUNT(DISTINCT uf.follower_id) as total_followers
+        COUNT(DISTINCT uf.follower_id) as total_followers,
+        (
+          SELECT COUNT(DISTINCT COALESCE(user_id::text, ip_address))
+          FROM article_views av
+          JOIN user_news un2 ON av.news_id = un2.id
+          WHERE un2.user_id = $1
+        ) as unique_views
       FROM user_news un
       LEFT JOIN news_likes nl ON un.id = nl.news_id
       LEFT JOIN comments c ON un.id = c.news_id
@@ -48,6 +54,7 @@ exports.getAnalyticsOverview = async (req, res) => {
       overview: {
         totalArticles: parseInt(stats.total_articles) || 0,
         totalViews: totalViews,
+        uniqueViews: parseInt(stats.unique_views) || 0,
         totalLikes: parseInt(stats.total_likes) || 0,
         totalComments: parseInt(stats.total_comments) || 0,
         totalFollowers: parseInt(stats.total_followers) || 0,

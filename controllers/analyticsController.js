@@ -4,46 +4,57 @@ const pool = require('../config/database');
 exports.getAnalyticsOverview = async (req, res) => {
   try {
     const userId = req.user?.id || req.user?.userId;
+    if (!userId) {
+      console.error('Analytics: User ID not found in request');
+      return res.status(401).json({ error: 'User not authenticated' });
+    }
 
     // Get total stats
+    // Using subqueries to avoid Cartesian product (fan-out) issues with multiple LEFT JOINs
     const statsQuery = `
       SELECT
-        COUNT(DISTINCT un.id) as total_articles,
-        COALESCE(SUM(un.view_count), 0) as total_views,
-        COUNT(DISTINCT nl.id) as total_likes,
-        COUNT(DISTINCT c.id) as total_comments,
-        COUNT(DISTINCT uf.follower_id) as total_followers,
+        (SELECT COUNT(*) FROM user_news WHERE user_id = $1) as total_articles,
+        (SELECT COALESCE(SUM(view_count), 0) FROM user_news WHERE user_id = $1) as total_views,
+        (SELECT COUNT(*) FROM news_likes nl JOIN user_news un4 ON nl.news_id = un4.id WHERE un4.user_id = $1) as total_likes,
+        (SELECT COUNT(*) FROM comments c JOIN user_news un3 ON c.news_id = un3.id WHERE un3.user_id = $1) as total_comments,
+        (SELECT COUNT(*) FROM user_follows WHERE followed_id = $1) as total_followers,
         (
-          SELECT COUNT(DISTINCT COALESCE(user_id::text, ip_address))
+          SELECT COUNT(DISTINCT COALESCE(av.user_id::text, av.ip_address))
           FROM article_views av
           JOIN user_news un2 ON av.news_id = un2.id
           WHERE un2.user_id = $1
         ) as unique_views
-      FROM user_news un
-      LEFT JOIN news_likes nl ON un.id = nl.news_id
-      LEFT JOIN comments c ON un.id = c.news_id
-      LEFT JOIN user_follows uf ON uf.followed_id = $1
-      WHERE un.user_id = $1
     `;
 
     const statsResult = await pool.query(statsQuery, [userId]);
-    const stats = statsResult.rows[0];
+    const stats = statsResult.rows[0] || {};
 
     // Get recent performance (last 30 days)
     const recentQuery = `
       SELECT
-        COUNT(DISTINCT un.id) as articles_published,
-        COALESCE(SUM(un.view_count), 0) as views,
-        COUNT(DISTINCT nl.id) as likes,
-        COUNT(DISTINCT c.id) as comments
-      FROM user_news un
-      LEFT JOIN news_likes nl ON un.id = nl.news_id AND nl.created_at >= NOW() - INTERVAL '30 days'
-      LEFT JOIN comments c ON un.id = c.news_id AND c.created_at >= NOW() - INTERVAL '30 days'
-      WHERE un.user_id = $1 AND un.created_at >= NOW() - INTERVAL '30 days'
+        (SELECT COUNT(*) FROM user_news WHERE user_id = $1 AND created_at >= NOW() - INTERVAL '30 days') as articles_published,
+        (
+          SELECT COUNT(*)
+          FROM article_views av
+          JOIN user_news un7 ON av.news_id = un7.id
+          WHERE un7.user_id = $1 AND av.viewed_at >= NOW() - INTERVAL '30 days'
+        ) as views,
+        (
+          SELECT COUNT(*)
+          FROM news_likes nl
+          JOIN user_news un6 ON nl.news_id = un6.id
+          WHERE un6.user_id = $1 AND nl.created_at >= NOW() - INTERVAL '30 days'
+        ) as likes,
+        (
+          SELECT COUNT(*)
+          FROM comments c
+          JOIN user_news un5 ON c.news_id = un5.id
+          WHERE un5.user_id = $1 AND c.created_at >= NOW() - INTERVAL '30 days'
+        ) as comments
     `;
 
     const recentResult = await pool.query(recentQuery, [userId]);
-    const recentStats = recentResult.rows[0];
+    const recentStats = recentResult.rows[0] || {};
 
     // Calculate engagement rate
     const totalViews = parseInt(stats.total_views) || 0;

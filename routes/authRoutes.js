@@ -10,12 +10,14 @@ const {
   uploadProfilePicture,
   forgotPassword,
   resetPassword,
+  deleteAccount,
   registerValidation,
   loginValidation,
   updateProfileValidation,
   changePasswordValidation,
   forgotPasswordValidation,
-  resetPasswordValidation
+  resetPasswordValidation,
+  deleteAccountValidation
 } = require('../controllers/authController');
 const { authenticate } = require('../middleware/auth');
 const upload = require('../config/upload');
@@ -30,5 +32,6 @@ router.put('/password', authenticate, changePasswordValidation, changePassword);
 router.post('/upload-profile-picture', authenticate, uploadLimiter, upload.single('profilePicture'), uploadProfilePicture);
 router.post('/forgot-password', passwordResetLimiter, forgotPasswordValidation, forgotPassword);
 router.post('/reset-password', passwordResetLimiter, resetPasswordValidation, resetPassword);
+router.delete('/delete-account', authenticate, deleteAccountValidation, deleteAccount);
 
 module.exports = router;

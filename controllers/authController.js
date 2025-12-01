@@ -3,6 +3,8 @@ const { body, validationResult } = require('express-validator');
 const User = require('../models/User');
 const { JWT_SECRET } = require('../middleware/auth');
 const { generateVerificationToken, sendVerificationEmail, sendPasswordResetEmail } = require('../services/emailService');
+const pool = require('../config/database');
+
 const generateToken = (user) => {
   return jwt.sign(
     { userId: user.id, email: user.email, username: user.username },
@@ -369,6 +371,66 @@ const resetPasswordValidation = [
   body('newPassword').isLength({ min: 6 }).withMessage('Şifre en az 6 karakter olmalıdır.')
 ];
 
+// DELETE ACCOUNT
+const deleteAccount = async (req, res) => {
+  const client = await pool.connect();
+  try {
+    const userId = req.user?.id || req.user?.userId;
+    const { password } = req.body;
+    const DELETED_USER_ID = 5; // Hardcoded Deleted User ID
+
+    // 1. Verify Password
+    const user = await User.findByIdWithPassword(userId);
+    if (!user) {
+      return res.status(404).json({ error: 'Kullanıcı bulunamadı.' });
+    }
+
+    const isValidPassword = await User.verifyPassword(password, user.password_hash);
+    if (!isValidPassword) {
+      return res.status(401).json({ error: 'Şifre yanlış.' });
+    }
+
+    if (userId === DELETED_USER_ID) {
+      return res.status(400).json({ error: 'Cannot delete the system user.' });
+    }
+
+    await client.query('BEGIN');
+
+    // 2. Transfer Content to Deleted User
+    // Transfer Articles
+    await client.query(
+      'UPDATE user_news SET user_id = $1 WHERE user_id = $2',
+      [DELETED_USER_ID, userId]
+    );
+
+    // Transfer Comments
+    await client.query(
+      'UPDATE comments SET user_id = $1 WHERE user_id = $2',
+      [DELETED_USER_ID, userId]
+    );
+
+    // 3. Delete User (Cascades everything else: likes, follows, notifications, etc.)
+    await client.query(
+      'DELETE FROM users WHERE id = $1',
+      [userId]
+    );
+
+    await client.query('COMMIT');
+
+    res.json({ message: 'Account deleted successfully.' });
+  } catch (error) {
+    await client.query('ROLLBACK');
+    console.error('Delete account error:', error);
+    res.status(500).json({ error: 'Hesap silinirken bir hata oluştu.' });
+  } finally {
+    client.release();
+  }
+};
+
+const deleteAccountValidation = [
+  body('password').notEmpty().withMessage('Şifre gereklidir.')
+];
+
 module.exports = {
   register,
   login,
@@ -379,10 +441,12 @@ module.exports = {
   uploadProfilePicture,
   forgotPassword,
   resetPassword,
+  deleteAccount, // Exported
   registerValidation,
   loginValidation,
   updateProfileValidation,
   changePasswordValidation,
   forgotPasswordValidation,
-  resetPasswordValidation
+  resetPasswordValidation,
+  deleteAccountValidation // Exported
 };

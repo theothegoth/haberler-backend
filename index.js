@@ -148,6 +148,8 @@ app.use(notFound);
 app.use(errorHandler);
 
 // Cron jobs
+scheduleWeeklyDigest();
+
 cron.schedule('*/30 * * * *', async () => {
   try {
     logger.info('Starting scheduled video cleanup...');

@@ -59,25 +59,21 @@ const newsController = {
     try {
       const userId = req.user ? (req.user.id || req.user.userId) : null;
       const { id } = req.params;
-
-      // Track article view FIRST (await it so the fetch gets the new count)
-      const ipAddress = req.ip || req.connection.remoteAddress;
-      await ArticleView.recordView(id, userId, ipAddress).catch(err => 
-        console.error('Error recording view:', err)
-      );
-
-      // THEN fetch the news (it will have the updated view_count)
       const news = await UserNews.findById(id, userId);
 
       if (!news) {
         return res.status(404).json({ error: 'Haber bulunamadı' });
       }
 
+      // Track article view (don't wait for it)
+      const ipAddress = req.ip || req.connection.remoteAddress;
+      ArticleView.recordView(id, userId, ipAddress).catch(err => 
+        console.error('Error recording view:', err)
+      );
       res.json(news);
     } catch (error) {
       console.error('Error getting news:', error);
-      console.error('Error getting news - Stack:', error.stack);
-      res.status(500).json({ error: 'Haber getirilirken bir hata oluştu', details: process.env.NODE_ENV === 'development' ? error.message : undefined });
+      res.status(500).json({ error: 'Haber getirilirken bir hata oluştu' });
     }
   },
 
@@ -109,21 +105,13 @@ const newsController = {
     }
   },
 
-  // Get news feed (from followed users OR public feed for guests)
+  // Get news feed (from followed users)
   async getNewsFeed(req, res) {
     try {
       const userId = req.user?.id || req.user?.userId;
       const { limit = 20, offset = 0 } = req.query;
 
-      let news;
-      if (userId) {
-        // Logged in user: Get personalized feed
-        news = await UserNews.getNewsFeed(userId, parseInt(limit), parseInt(offset));
-      } else {
-        // Guest user: Get all public news
-        news = await UserNews.getAllPublic(parseInt(limit), parseInt(offset));
-      }
-      
+      const news = await UserNews.getNewsFeed(userId, parseInt(limit), parseInt(offset));
       res.json(news);
     } catch (error) {
       console.error('Error getting news feed:', error);
@@ -223,11 +211,6 @@ const newsController = {
         return res.status(400).json({ error: 'Bu haberi zaten beğendiniz' });
       }
 
-      // *** CACHE INVALIDATION ***
-      // Clear cache so next fetch shows correct Like status
-      deleteCache(`article:${id}`).catch(err => console.error('Cache invalidation error:', err));
-      deleteCachePattern('news:feed:*').catch(err => console.error('Cache invalidation error:', err));
-
       // Only notify and send email if the liker is not the article owner
       if (news.user_id !== userId) {
         // Create notification for the article owner (don't await)
@@ -283,11 +266,6 @@ const newsController = {
       if (!success) {
         return res.status(400).json({ error: 'Bu haberi beğenmemişsiniz' });
       }
-
-      // *** CACHE INVALIDATION ***
-      // Clear cache so next fetch shows correct Like status
-      deleteCache(`article:${id}`).catch(err => console.error('Cache invalidation error:', err));
-      deleteCachePattern('news:feed:*').catch(err => console.error('Cache invalidation error:', err));
 
       res.json({ message: 'Beğeni kaldırıldı' });
     } catch (error) {

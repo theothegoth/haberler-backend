@@ -217,7 +217,7 @@ class UserNews {
         un.*,
         u.username,
         (SELECT COUNT(*)::int FROM news_likes WHERE news_id = un.id) as like_count,
-        (SELECT COUNT(*)::int FROM news_comments WHERE news_id = un.id) as comment_count,
+        (SELECT COUNT(*)::int FROM comments WHERE news_id = un.id) as comment_count,
         (SELECT COUNT(*)::int FROM article_videos WHERE article_id = un.id) as video_count,
         (SELECT image_url FROM article_images WHERE article_id = un.id ORDER BY display_order ASC LIMIT 1) as image_url,
         COALESCE(

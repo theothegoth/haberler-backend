@@ -100,9 +100,90 @@ const sendWelcomeEmail = async (to, username) => {
   return sendEmail(to, 'GasteHub\'a Hoş Geldiniz!', html);
 };
 
+const sendNewLikeEmail = async (to, username, likerName, articleTitle, articleId) => {
+  const articleUrl = `${process.env.FRONTEND_URL || 'https://www.gastehub.com'}/article/${articleId}`;
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+      <h2 style="color: #2563eb;">Yeni Beğeni!</h2>
+      <p>Merhaba ${username},</p>
+      <p><strong>${likerName}</strong> makaleni beğendi:</p>
+      <p><a href="${articleUrl}" style="color: #2563eb; text-decoration: none; font-weight: bold;">${articleTitle}</a></p>
+    </div>
+  `;
+  return sendEmail(to, 'Makaleniz Beğenildi', html);
+};
+
+const sendNewCommentEmail = async (to, username, commenterName, articleTitle, articleId, commentContent) => {
+  const articleUrl = `${process.env.FRONTEND_URL || 'https://www.gastehub.com'}/article/${articleId}`;
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+      <h2 style="color: #2563eb;">Yeni Yorum!</h2>
+      <p>Merhaba ${username},</p>
+      <p><strong>${commenterName}</strong> makalene yorum yaptı:</p>
+      <p><a href="${articleUrl}" style="color: #2563eb; text-decoration: none; font-weight: bold;">${articleTitle}</a></p>
+      <div style="background-color: #f3f4f6; padding: 15px; border-radius: 5px; margin: 15px 0; font-style: italic;">
+        "${commentContent}"
+      </div>
+    </div>
+  `;
+  return sendEmail(to, 'Makalenize Yorum Yapıldı', html);
+};
+
+const sendNewFollowerEmail = async (to, username, followerName, followerId) => {
+  const followerUrl = `${process.env.FRONTEND_URL || 'https://www.gastehub.com'}/user/${followerId}`;
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+      <h2 style="color: #2563eb;">Yeni Takipçi!</h2>
+      <p>Merhaba ${username},</p>
+      <p><strong>${followerName}</strong> seni takip etmeye başladı!</p>
+      <p><a href="${followerUrl}" style="color: #2563eb; text-decoration: none; font-weight: bold;">Profilini Görüntüle</a></p>
+    </div>
+  `;
+  return sendEmail(to, 'Yeni Takipçiniz Var', html);
+};
+
+const sendWeeklyDigestEmail = async (to, username, articles) => {
+  const articlesList = articles.map(article => `
+    <div style="margin-bottom: 20px; padding-bottom: 20px; border-bottom: 1px solid #eee;">
+      <h3 style="margin: 0 0 10px 0;">
+        <a href="${process.env.FRONTEND_URL || 'https://www.gastehub.com'}/article/${article.id}" style="color: #2563eb; text-decoration: none;">
+          ${article.title}
+        </a>
+      </h3>
+      <p style="margin: 0 0 10px 0; color: #666; font-size: 14px;">
+        ${article.username} tarafından • ${new Date(article.created_at).toLocaleDateString('tr-TR')}
+      </p>
+      <p style="margin: 0; color: #444;">
+        ${article.content ? article.content.substring(0, 150).replace(/<[^>]*>?/gm, '') : ''}...
+      </p>
+    </div>
+  `).join('');
+
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+      <h2 style="color: #2563eb;">Haftalık Bülten</h2>
+      <p>Merhaba ${username},</p>
+      <p>Bu hafta GasteHub'da öne çıkan makaleler:</p>
+      <div style="margin-top: 30px;">
+        ${articlesList}
+      </div>
+      <div style="text-align: center; margin-top: 30px; font-size: 12px; color: #888;">
+        <p>Bu e-postayı, haftalık bülten tercihinize istinaden alıyorsunuz.</p>
+        <a href="${process.env.FRONTEND_URL || 'https://www.gastehub.com'}/settings" style="color: #888;">Tercihleri Yönet</a>
+      </div>
+    </div>
+  `;
+
+  return sendEmail(to, 'GasteHub Haftalık Bülten', html);
+};
+
 module.exports = {
   sendVerificationEmail,
   sendPasswordResetEmail,
   sendWelcomeEmail,
+  sendNewLikeEmail,
+  sendNewCommentEmail,
+  sendNewFollowerEmail,
+  sendWeeklyDigestEmail,
   generateVerificationToken
 };

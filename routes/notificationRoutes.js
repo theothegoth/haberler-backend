@@ -8,10 +8,10 @@ const { cacheMiddleware, cacheKeys } = require('../middleware/cacheMiddleware');
 router.use(authenticate);
 
 // Get user's notifications
-router.get('/', cacheMiddleware(60, cacheKeys.notifications), notificationController.getNotifications); // Cache 1 min
+router.get('/', notificationController.getNotifications);
 
 // Get unread count
-router.get('/unread/count', cacheMiddleware(30, cacheKeys.notifications), notificationController.getUnreadCount); // Cache 30 sec
+router.get('/unread/count', notificationController.getUnreadCount);
 
 // Mark all as read
 router.put('/mark-all-read', notificationController.markAllAsRead);

@@ -82,6 +82,7 @@ class UserFollow {
        FROM users u
        WHERE u.id != $1
        AND u.username != 'Deleted User'
+       AND u.username != 'admin'
        AND u.id NOT IN (SELECT followed_id FROM user_follows WHERE follower_id = $1)
        ORDER BY followers_count DESC, news_count DESC
        LIMIT $2`,

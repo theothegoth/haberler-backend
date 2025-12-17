@@ -2,6 +2,7 @@ const ArticleImage = require('../models/ArticleImage');
 const pool = require('../config/database');
 const cloudinary = require('../config/cloudinary');
 const fs = require('fs').promises;
+const { deleteCachePattern, deleteCache, deleteUserArticleCaches, clearAllUserArticleCaches } = require('../config/cache');
 
 // Add a new image to an article
 const addArticleImage = async (req, res) => {
@@ -81,7 +82,17 @@ const addArticleImage = async (req, res) => {
       nextOrder
     );
 
-    res.status(201).json({
+ // Invalidate caches for this article and user's articles list
+    deleteCache(`article:${articleId}`).catch(err => console.error('Cache invalidation error:', err));
+    (deleteUserArticleCaches ? (clearAllUserArticleCaches(userId)) : clearAllUserArticleCaches(userId)).catch(err => console.error('Cache invalidation error:', err));
+    deleteCachePattern('news:feed:*'),
+        deleteCachePattern('api:/api/news/my-articles*'),
+        deleteCachePattern('api:/api/news/feed*'),
+        deleteCachePattern(`api:/api/articles/${articleId}*`),
+        deleteCachePattern('api:/api/news/my-articles*'),
+        deleteCachePattern('api:/api/news/feed*').catch(err => console.error('Cache invalidation error:', err));   
+
+     res.status(201).json({
       message: 'Image added successfully',
       image
     });
@@ -96,7 +107,7 @@ const addArticleImage = async (req, res) => {
         // File already deleted or doesn't exist
       }
     }
-    res.status(500).json({ error: 'Failed to add image' });
+    res.status(500).json({ error: 'Failed to add image', details: process.env.NODE_ENV === 'development' ? error.message : undefined });
   }
 };
 
@@ -127,7 +138,10 @@ const getArticleImages = async (req, res) => {
 
     res.json({ images });
   } catch (error) {
-    res.status(500).json({ error: 'Failed to get article images' });
+    console.error('[GET_ARTICLE_IMAGES] Error:', error);
+    console.error('[GET_ARTICLE_IMAGES] Stack:', error.stack);
+    console.error('[GET_ARTICLE_IMAGES] Stack:', error.stack);
+    res.status(500).json({ error: 'Failed to get article images', details: process.env.NODE_ENV === 'development' ? error.message : undefined });
   }
 };
 
@@ -168,6 +182,9 @@ const updateImageCaption = async (req, res) => {
     }
 
     const updatedImage = await ArticleImage.updateCaption(imageId, caption);
+
+ // Invalidate caches for this article
+    deleteCache(`article:${image.article_id}`).catch(err => console.error('Cache invalidation error:', err));
 
     res.json({
       message: 'Caption updated successfully',
@@ -224,6 +241,21 @@ const deleteArticleImage = async (req, res) => {
 
     // Delete from database
     await ArticleImage.deleteImage(imageId);
+
+ // Invalidate caches for this article and user's articles list
+    
+        // Fixed Cache Invalidation
+        try {
+          const articleId = image.article_id;
+          await Promise.allSettled([
+            deleteCache(`article:${articleId}`),
+            deleteUserArticleCaches ? deleteUserArticleCaches(userId) : deleteCachePattern(`user:${userId}:articles:*`),
+            deleteCachePattern('news:feed:*'),
+            deleteCachePattern(`api:/api/news/my-articles:${userId}:*`),
+            deleteCachePattern(`api:/api/news/my/articles:${userId}:*`)
+          ]);
+        } catch (err) { console.error('Cache fix error:', err); }
+            
 
     res.json({ message: 'Image deleted successfully' });
   } catch (error) {

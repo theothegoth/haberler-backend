@@ -28,7 +28,7 @@ router.post('/upload-image', authenticate, uploadLimiter, articleImageUpload.sin
 
 // Protected routes (require authentication) - put these first to avoid conflicts
 router.post('/', authenticate, createLimiter, articleValidation, newsController.createNews);
-router.get('/feed/my-feed', authenticate, cacheMiddleware(300, cacheKeys.newsFeed), newsController.getNewsFeed); // Cache 5 min
+router.get('/feed/my-feed', optionalAuthenticate, cacheMiddleware(300, cacheKeys.newsFeed), newsController.getNewsFeed); // Cache 5 min - Optional Auth for Guest Feed
 router.get('/my/articles', authenticate, cacheMiddleware(300, cacheKeys.userArticles), newsController.getMyNews); // Cache 5 min
 
 // Public routes - put these after protected routes

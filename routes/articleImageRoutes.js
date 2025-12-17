@@ -49,38 +49,44 @@ const upload = multer({
   },
   fileFilter: fileFilter
 });
+// Multer error handler middleware
+const handleMulterError = (err, req, res, next) => {
+  if (err instanceof multer.MulterError) {
+    if (err.code === 'LIMIT_FILE_SIZE') {
+      return res.status(400).json({ error: 'File too large. Maximum size is 5MB' });
+    }
+    return res.status(400).json({ error: err.message });
+  }
+  if (err) {
+    return res.status(400).json({ error: err.message });
+  }
+  next();
+};
+
 
 // Reorder images (authenticated) - MUST come before /:articleId/images routes!
 router.put('/:articleId/images/reorder', authenticate, reorderImages);
 
 // Add image to article (authenticated, with file upload)
-router.post('/:articleId/images', (req, res, next) => {
-  next();
-}, authenticate, upload.single('image'), (err, req, res, next) => {
-  if (err) {
-    console.error('[MULTER_ERROR]', err);
-    return res.status(400).json({ error: err.message });
-  }
-  
+router.post('/:articleId/images', authenticate, upload.single('image'), handleMulterError, async (req, res, next) => {
   // Security Check: Validate file magic bytes using file-type
   if (req.file) {
-    (async () => {
-      try {
-        const fileType = await FileType.fromFile(req.file.path);
-        const allowedMimes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
-        
-        if (!fileType || !allowedMimes.includes(fileType.mime)) {
-          // Delete the file immediately
-          fs.unlink(req.file.path, () => {});
-          return res.status(400).json({ error: 'Invalid file type detected (magic byte mismatch)' });
-        }
-        next();
-      } catch (validationError) {
-        console.error('[FILE_VALIDATION_ERROR]', validationError);
+    try {
+      const fileType = await FileType.fromFile(req.file.path);
+      const allowedMimes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+      
+      if (!fileType || !allowedMimes.includes(fileType.mime)) {
         fs.unlink(req.file.path, () => {});
-        return res.status(500).json({ error: 'File validation failed' });
+        return res.status(400).json({ error: 'Invalid file type detected (magic byte mismatch)' });
       }
-    })();
+      next();
+    } catch (validationError) {
+      console.error('[FILE_VALIDATION_ERROR]', validationError);
+      if (req.file?.path) {
+        fs.unlink(req.file.path, () => {});
+      }
+      return res.status(500).json({ error: 'File validation failed', details: validationError.message });
+    }
   } else {
     next();
   }

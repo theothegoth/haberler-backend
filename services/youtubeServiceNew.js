@@ -63,7 +63,42 @@ class YouTubeService {
     const rssVideoData = {};
 
     for (const [channelId, videos] of Object.entries(rssResults)) {
-      for (const video of videos) {
+      let videosToProcess = videos;
+
+      // Fallback: If RSS failed (returned null), try API Search
+      if (videosToProcess === null) {
+        try {
+          const searchRes = await axios.get('https://youtube.googleapis.com/youtube/v3/search', {
+            params: {
+              part: 'snippet,id',
+              channelId: channelId,
+              type: 'video',
+              order: 'date',
+              maxResults: 5, // Limit to 5 to save quota
+              key: apiKey
+            }
+          });
+          
+          if (searchRes.data.items) {
+            videosToProcess = searchRes.data.items.map(item => ({
+              videoId: item.id.videoId,
+              title: item.snippet.title,
+              publishedAt: item.snippet.publishedAt,
+              channelTitle: item.snippet.channelTitle,
+              thumbnail: YouTubeService.getBestThumbnail(item.snippet.thumbnails)
+            }));
+          } else {
+            videosToProcess = [];
+          }
+        } catch (err) {
+          console.error(`Fallback update failed for ${channelId}:`, err.message);
+          videosToProcess = [];
+        }
+      }
+
+      if (!videosToProcess || videosToProcess.length === 0) continue;
+
+      for (const video of videosToProcess) {
         const exists = await VideoCache.exists(video.videoId);
         if (!exists) {
           videoIdsToFetch.add(video.videoId);
@@ -218,9 +253,33 @@ class YouTubeService {
     await UserChannel.add(userId, channelId, channelTitle);
 
     const rssVideos = await RSSService.checkChannelForNewVideos(channelId);
+    let videoIds = [];
 
     if (rssVideos && rssVideos.length > 0) {
-      const videoIds = rssVideos.map(v => v.videoId);
+      videoIds = rssVideos.map(v => v.videoId);
+    } else {
+      // Fallback: If RSS fails or is empty, use Search API to get latest videos
+      // This ensures we get videos even if RSS is broken (404) or empty
+      try {
+        const searchRes = await axios.get('https://youtube.googleapis.com/youtube/v3/search', {
+          params: {
+            part: 'id',
+            channelId: channelId,
+            type: 'video',
+            order: 'date',
+            maxResults: 10,
+            key: apiKey
+          }
+        });
+        if (searchRes.data.items) {
+          videoIds = searchRes.data.items.map(item => item.id.videoId);
+        }
+      } catch (searchError) {
+        console.error('Fallback Search API failed:', searchError.message);
+      }
+    }
+
+    if (videoIds.length > 0) {
       const statsRes = await axios.get('https://youtube.googleapis.com/youtube/v3/videos', {
         params: {
           part: 'statistics,snippet',

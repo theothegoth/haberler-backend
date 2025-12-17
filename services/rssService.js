@@ -55,7 +55,7 @@ class RSSService {
       if (result.status === 'fulfilled' && result.value !== null) {
         channelVideos[channelId] = result.value;
       } else {
-        channelVideos[channelId] = [];
+        channelVideos[channelId] = null; // Return null if failed
       }
     });
 

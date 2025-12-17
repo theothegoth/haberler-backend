@@ -16,8 +16,9 @@ class Notification {
       `SELECT n.*, u.username as actor_username
        FROM notifications n
        LEFT JOIN users u ON n.actor_id = u.id
+       LEFT JOIN user_news un ON (n.entity_type = 'news' AND n.entity_id = un.id)
        WHERE n.user_id = $1
-       ORDER BY n.created_at DESC
+       ORDER BY n.is_read ASC, n.created_at DESC
        LIMIT $2 OFFSET $3`,
       [userId, limit, offset]
     );
@@ -26,7 +27,12 @@ class Notification {
 
   static async getUnreadCount(userId) {
     const result = await pool.query(
-      'SELECT COUNT(*) as count FROM notifications WHERE user_id = $1 AND is_read = FALSE',
+      `SELECT COUNT(n.id) as count 
+       FROM notifications n
+       LEFT JOIN users u ON n.actor_id = u.id
+       LEFT JOIN user_news un ON (n.entity_type = 'news' AND n.entity_id = un.id)
+       WHERE n.user_id = $1 
+       AND n.is_read = FALSE`,
       [userId]
     );
     return parseInt(result.rows[0].count);
@@ -56,7 +62,6 @@ class Notification {
     return result.rows[0];
   }
 
-  // Helper methods to create specific notification types
   static async createLikeNotification(newsId, likedByUserId, newsOwnerId) {
     // Don't notify if user likes their own article
     if (likedByUserId === newsOwnerId) return null;

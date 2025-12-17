@@ -49,6 +49,29 @@ async function loadVideosCache(countryCode) {
   }
 }
 
+// Prefer highest quality thumbnail available (similar to youtubeServiceNew)
+function getBestThumbnail(thumbnails) {
+  if (!thumbnails) return null;
+
+  if (thumbnails.maxres && thumbnails.maxres.url) {
+    return thumbnails.maxres.url;
+  }
+  if (thumbnails.standard && thumbnails.standard.url) {
+    return thumbnails.standard.url;
+  }
+  if (thumbnails.high && thumbnails.high.url) {
+    return thumbnails.high.url;
+  }
+  if (thumbnails.medium && thumbnails.medium.url) {
+    return thumbnails.medium.url;
+  }
+  if (thumbnails.default && thumbnails.default.url) {
+    return thumbnails.default.url;
+  }
+
+  return null;
+}
+
 function cleanVideosCache(videos) {
   const MAX_CACHE_AGE_HOURS = 48;
   const now = new Date();
@@ -134,7 +157,7 @@ async function updateVideoCache(countryCode = 'TR') {
             videoId,
             channelTitle: video.snippet.channelTitle,
             title: video.snippet.title,
-            thumbnail: video.snippet.thumbnails.medium.url,
+            thumbnail: getBestThumbnail(video.snippet.thumbnails),
             publishedAt: video.snippet.publishedAt,
             likeCount: 0,
             category: null
@@ -319,7 +342,7 @@ async function addChannelFromInput(input, countryCode = 'TR') {
         videoId,
         channelTitle,
         title: video.snippet.title,
-        thumbnail: video.snippet.thumbnails.medium.url,
+        thumbnail: getBestThumbnail(video.snippet.thumbnails),
         publishedAt: video.snippet.publishedAt,
         likeCount,
         category
